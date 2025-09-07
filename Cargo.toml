@@ -1,0 +1,11 @@
+[package]
+name = "piyopiyo"
+description = "Player for PiyoPiyo music files (Ikachan & friends)"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.89"
+license = "0BSD"
+
+[dependencies]
+bytemuck.version = "1.23.2"
+bytemuck.features = ["derive"]
