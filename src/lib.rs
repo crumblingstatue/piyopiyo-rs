@@ -107,21 +107,21 @@ impl Player {
     }
 
     fn tick(&mut self) {
-        let samples_per_tick = u32::from(self.sample_rate) * self.millis_per_tick / 1000;
         let curr_tick = self.curr_tick;
         self.curr_tick = self.curr_tick.wrapping_sub(1);
         if curr_tick == 0 {
+            let samples_per_tick = u32::from(self.sample_rate) * self.millis_per_tick / 1000;
             self.curr_tick = samples_per_tick;
-            let (last, init) = self.tracks.split_last_mut().unwrap();
+            let (perc, melody) = self.tracks.split_last_mut().unwrap();
 
-            for track in init {
+            for track in melody {
                 track.tick::<false>(self.note_ptr as usize);
             }
-            last.tick::<true>(self.note_ptr as usize);
+            perc.tick::<true>(self.note_ptr as usize);
             self.note_ptr += 1;
-        }
-        if self.note_ptr >= self.end_tick {
-            self.note_ptr = self.repeat_tick;
+            if self.note_ptr >= self.end_tick {
+                self.note_ptr = self.repeat_tick;
+            }
         }
     }
 
