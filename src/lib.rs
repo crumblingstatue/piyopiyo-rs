@@ -128,11 +128,11 @@ impl Player {
     fn next_sample(&mut self) -> StereoSample {
         let mut sample = [0; 2];
         let samp_phase = 22_050. / f32::from(self.sample_rate);
-        let (last, init) = self.tracks.split_last_mut().unwrap();
-        for track in init {
+        let (perc, melody) = self.tracks.split_last_mut().unwrap();
+        for track in melody {
             track.render::<false>(&mut sample, samp_phase);
         }
-        last.render::<true>(&mut sample, samp_phase);
+        perc.render::<true>(&mut sample, samp_phase);
         sample
     }
 }
