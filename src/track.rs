@@ -7,7 +7,6 @@ pub struct Track {
     pub len: u32,
     // Some tracks seem to have over 255 volume, so this can't be u8
     pub vol: u16,
-    active_note: Note,
     vol_left: f32,
     vol_right: f32,
     vol_mix: f32,
@@ -26,7 +25,6 @@ impl Default for Track {
             octave: 0,
             len: 0,
             vol: 0,
-            active_note: Note(0),
             vol_left: 1.0,
             vol_right: 1.0,
             vol_mix: 1.0,
@@ -41,11 +39,11 @@ impl Default for Track {
 
 impl Track {
     pub fn tick<const PERCUSSION: bool>(&mut self, note_idx: usize) {
-        self.active_note = self.notes[note_idx];
+        let note = self.notes[note_idx];
         for key in keys() {
             // Sample and track lengths are small enough to fit f32
             #[expect(clippy::cast_precision_loss)]
-            if self.active_note.key_down(key) {
+            if note.key_down(key) {
                 self.timers[usize::from(key)] = if PERCUSSION {
                     PERCUSSION_SAMPLES[usize::from(key)].len() as f32
                 } else {
@@ -64,7 +62,7 @@ impl Track {
             let vol = f32::from((i16::try_from(self.vol).unwrap() - 300) * 8);
             self.vol_mix = 10.0f32.powf(vol / 2000.0);
         }
-        if let Some(pan) = self.active_note.pan() {
+        if let Some(pan) = note.pan() {
             self.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
             self.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
