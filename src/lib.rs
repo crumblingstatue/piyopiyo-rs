@@ -53,6 +53,8 @@ impl Default for Player {
 pub enum LoadError {
     /// Invalid magic (not `PMD`)
     InvalidMagic,
+    /// End of file was reached prematurely
+    PrematureEof,
 }
 
 type StereoSample = [i16; 2];
@@ -74,16 +76,20 @@ impl Player {
             return Err(LoadError::InvalidMagic);
         }
         cur.skip(5);
-        self.millis_per_tick = cur.next_u32_le().unwrap();
-        self.repeat_tick = cur.next_u32_le().unwrap();
-        self.end_tick = cur.next_u32_le().unwrap();
-        let n_notes = cur.next_u32_le().unwrap() as usize;
+        self.millis_per_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        self.repeat_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        self.end_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        let n_notes = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
 
         for track in &mut self.melody_tracks {
             track.read_melody(&mut cur);
         }
 
-        self.percussion_track.vol = cur.next_u32_le().unwrap().try_into().unwrap();
+        self.percussion_track.vol = cur
+            .next_u32_le()
+            .ok_or(LoadError::PrematureEof)?
+            .try_into()
+            .unwrap();
 
         for track in &mut self.melody_tracks {
             track.notes = cur.next_n(n_notes).into();
