@@ -178,7 +178,7 @@ impl Track {
 pub struct Note(u32);
 
 impl Note {
-    pub const fn key_down(self, key: u8) -> bool {
+    pub const fn key_down(self, key: Key) -> bool {
         self.0 & (1 << key) != 0
     }
     pub fn pan(self) -> Option<i16> {
