@@ -95,11 +95,14 @@ impl Track {
         }
         let envelope = 2 * i16::from(self.envelope[idx]);
         let oct_shift: u8 = 1 << self.octave;
+        let freq_table = [
+            1551., 1652., 1747., 1848., 1955., 2074., 2205., 2324., 2461., 2616., 2770., 2938.,
+        ];
         let phase = (f32::from(oct_shift)
             * (if key < 12 {
-                f32::from(FREQ_TBL[key]) / 16.0
+                freq_table[key] / 16.0
             } else {
-                f32::from(FREQ_TBL[key - 12]) / 8.0
+                freq_table[key - 12] / 8.0
             }))
             * samp_phase;
         // We intentionally convert the phase into an integer here, so truncation is expected.
@@ -170,12 +173,6 @@ impl Track {
     }
 }
 
-const FREQ_TBL: [i16; 12] = [
-    1551, 1652, 1747, 1848, 1955, 2074, 2205, 2324, 2461, 2616, 2770, 2938,
-];
-
-const PAN_TBL: [i16; 8] = [2560, 1600, 760, 320, 0, -320, -760, -1640];
-
 #[repr(transparent)]
 #[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct Note(u32);
@@ -185,7 +182,8 @@ impl Note {
         self.0 & (1 << key) != 0
     }
     pub fn pan(self) -> Option<i16> {
-        (self.0 & 0xff00_0000 != 0).then(|| PAN_TBL[(self.0 >> 24) as usize])
+        let pan_table = [2560, 1600, 760, 320, 0, -320, -760, -1640];
+        (self.0 & 0xff00_0000 != 0).then(|| pan_table[(self.0 >> 24) as usize])
     }
 }
 
