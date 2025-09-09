@@ -1,10 +1,10 @@
-use crate::StereoSample;
+use crate::{StereoSample, read_cursor::ReadCursor};
 
 pub struct Track {
-    pub waveform: [i8; 0x100],
-    pub envelope: [u8; 0x40],
-    pub octave: u8,
-    pub len: u32,
+    waveform: [i8; 0x100],
+    envelope: [u8; 0x40],
+    octave: u8,
+    len: u32,
     // Some tracks seem to have over 255 volume, so this can't be u8
     pub vol: u16,
     vol_left: f32,
@@ -152,6 +152,15 @@ impl Track {
             *l = l.saturating_add((p * self.vol_left) as i16);
             *r = r.saturating_add((p * self.vol_right) as i16);
         }
+    }
+    pub fn read_melody(&mut self, cur: &mut ReadCursor) {
+        self.octave = cur.next_u8().unwrap();
+        cur.skip(3);
+        self.len = cur.next_u32_le().unwrap();
+        self.vol = cur.next_u32_le().unwrap().try_into().unwrap();
+        cur.skip(8);
+        self.waveform = *bytemuck::cast_ref(cur.next_bytes::<256>().unwrap());
+        self.envelope = *cur.next_bytes().unwrap();
     }
 }
 

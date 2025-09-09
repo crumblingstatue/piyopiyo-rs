@@ -80,13 +80,7 @@ impl Player {
         let n_notes = cur.next_u32_le().unwrap() as usize;
 
         for track in &mut self.melody_tracks {
-            track.octave = cur.next_u8().unwrap();
-            cur.skip(3);
-            track.len = cur.next_u32_le().unwrap();
-            track.vol = cur.next_u32_le().unwrap().try_into().unwrap();
-            cur.skip(8);
-            track.waveform = *bytemuck::cast_ref(cur.next_bytes::<256>().unwrap());
-            track.envelope = *cur.next_bytes().unwrap();
+            track.read_melody(&mut cur);
         }
 
         self.percussion_track.vol = cur.next_u32_le().unwrap().try_into().unwrap();
