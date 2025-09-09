@@ -1,4 +1,4 @@
-use crate::{StereoSample, read_cursor::ReadCursor};
+use crate::{LoadError, StereoSample, read_cursor::ReadCursor};
 
 pub struct Track {
     waveform: [i8; 0x100],
@@ -153,14 +153,20 @@ impl Track {
             *r = r.saturating_add((p * self.vol_right) as i16);
         }
     }
-    pub fn read_melody(&mut self, cur: &mut ReadCursor) {
-        self.octave = cur.next_u8().unwrap();
+    pub fn read_melody(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
+        self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
         cur.skip(3);
-        self.len = cur.next_u32_le().unwrap();
-        self.vol = cur.next_u32_le().unwrap().try_into().unwrap();
+        self.len = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        self.vol = cur
+            .next_u32_le()
+            .ok_or(LoadError::PrematureEof)?
+            .try_into()
+            .unwrap();
         cur.skip(8);
-        self.waveform = *bytemuck::cast_ref(cur.next_bytes::<256>().unwrap());
-        self.envelope = *cur.next_bytes().unwrap();
+        self.waveform =
+            *bytemuck::cast_ref(cur.next_bytes::<256>().ok_or(LoadError::PrematureEof)?);
+        self.envelope = *cur.next_bytes().ok_or(LoadError::PrematureEof)?;
+        Ok(())
     }
 }
 

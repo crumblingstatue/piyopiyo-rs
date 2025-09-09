@@ -82,7 +82,7 @@ impl Player {
         let n_notes = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
 
         for track in &mut self.melody_tracks {
-            track.read_melody(&mut cur);
+            track.read_melody(&mut cur)?;
         }
 
         self.percussion_track.vol = cur
