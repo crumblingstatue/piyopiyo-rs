@@ -25,7 +25,8 @@ pub struct Player {
     millis_per_tick: u32,
     repeat_tick: u32,
     end_tick: u32,
-    tracks: [Track; 4],
+    melody_tracks: [Track; 3],
+    percussion_track: Track,
     curr_tick: u32,
     note_ptr: u32,
     loaded: bool,
@@ -38,7 +39,8 @@ impl Default for Player {
             millis_per_tick: 0,
             repeat_tick: 0,
             end_tick: 0,
-            tracks: std::array::from_fn(|_| Track::default()),
+            melody_tracks: std::array::from_fn(|_| Track::default()),
+            percussion_track: Track::default(),
             curr_tick: 0,
             note_ptr: 0,
             loaded: false,
@@ -77,7 +79,7 @@ impl Player {
         self.end_tick = cur.next_u32_le().unwrap();
         let n_notes = cur.next_u32_le().unwrap() as usize;
 
-        for track in &mut self.tracks[..3] {
+        for track in &mut self.melody_tracks {
             track.octave = cur.next_u8().unwrap();
             cur.skip(3);
             track.len = cur.next_u32_le().unwrap();
@@ -87,11 +89,12 @@ impl Player {
             track.envelope = *cur.next_bytes().unwrap();
         }
 
-        self.tracks[3].vol = cur.next_u32_le().unwrap().try_into().unwrap();
+        self.percussion_track.vol = cur.next_u32_le().unwrap().try_into().unwrap();
 
-        for track in &mut self.tracks {
+        for track in &mut self.melody_tracks {
             track.notes = cur.next_n(n_notes).into();
         }
+        self.percussion_track.notes = cur.next_n(n_notes).into();
         self.loaded = true;
         Ok(())
     }
@@ -112,12 +115,11 @@ impl Player {
         if curr_tick == 0 {
             let samples_per_tick = u32::from(self.sample_rate) * self.millis_per_tick / 1000;
             self.curr_tick = samples_per_tick;
-            let (perc, melody) = self.tracks.split_last_mut().unwrap();
 
-            for track in melody {
+            for track in &mut self.melody_tracks {
                 track.tick::<false>(self.note_ptr as usize);
             }
-            perc.tick::<true>(self.note_ptr as usize);
+            self.percussion_track.tick::<true>(self.note_ptr as usize);
             self.note_ptr += 1;
             if self.note_ptr >= self.end_tick {
                 self.note_ptr = self.repeat_tick;
@@ -128,11 +130,11 @@ impl Player {
     fn next_sample(&mut self) -> StereoSample {
         let mut sample = [0; 2];
         let samp_phase = 22_050. / f32::from(self.sample_rate);
-        let (perc, melody) = self.tracks.split_last_mut().unwrap();
-        for track in melody {
+        for track in &mut self.melody_tracks {
             track.render::<false>(&mut sample, samp_phase);
         }
-        perc.render::<true>(&mut sample, samp_phase);
+        self.percussion_track
+            .render::<true>(&mut sample, samp_phase);
         sample
     }
 }
