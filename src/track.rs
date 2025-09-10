@@ -4,7 +4,7 @@ mod melody;
 mod percussion;
 
 pub struct TrackBase {
-    // Some tracks seem to have over 255 volume, so this can't be u8
+    // Seems to be in the range 0..=300
     pub vol: u16,
     vol_left: f32,
     vol_right: f32,
