@@ -43,13 +43,13 @@ impl Track for PercussionTrack {
         let ph_fract = phase_accum.fract();
         let v0 = f32::from(i16::from(psample[ph]) - 0x80);
         let v1 = f32::from(i16::from(psample[ph2]) - 0x80);
-        let p = ph_fract.mul_add(v1 - v0, v0)
-            * 256.0
-            * (if (key & 1) != 0 {
-                self.vol_mix_low
-            } else {
-                self.base.vol_mix
-            });
+        // For percussion keys, every second key has a lower volume
+        let vol_mix = if key % 2 == 0 {
+            self.base.vol_mix
+        } else {
+            self.vol_mix_low
+        };
+        let p = ph_fract.mul_add(v1 - v0, v0) * 256.0 * vol_mix;
         // We assume that the sample can fit within i16 range, and we don't care about
         // the fractional part.
         #[expect(clippy::cast_possible_truncation)]
