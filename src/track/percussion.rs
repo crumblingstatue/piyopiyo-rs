@@ -18,18 +18,6 @@ impl Default for PercussionTrack {
 }
 
 impl PercussionTrack {
-    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
-        for key in keys() {
-            if self.base.timers[usize::from(key)] <= 0.0 {
-                continue;
-            }
-            self.base.timers[usize::from(key)] -= samp_phase;
-
-            let [l, r] = self.sample_of_key(key, samp_phase);
-            *out_l = out_l.saturating_add(l);
-            *out_r = out_r.saturating_add(r);
-        }
-    }
     pub fn tick(&mut self, note_idx: usize) {
         let note = self.base.notes[note_idx];
         for key in keys() {
@@ -48,6 +36,18 @@ impl PercussionTrack {
         if let Some(pan) = note.pan() {
             self.base.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
             self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
+        }
+    }
+    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
+        for key in keys() {
+            if self.base.timers[usize::from(key)] <= 0.0 {
+                continue;
+            }
+            self.base.timers[usize::from(key)] -= samp_phase;
+
+            let [l, r] = self.sample_of_key(key, samp_phase);
+            *out_l = out_l.saturating_add(l);
+            *out_r = out_r.saturating_add(r);
         }
     }
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
