@@ -22,7 +22,7 @@ impl Default for TrackBase {
             vol: 0,
             vol_left: 1.0,
             vol_right: 1.0,
-            vol_mix: 1.0,
+            vol_mix: 0.0,
             timers: Default::default(),
             phases: Default::default(),
             notes: Box::default(),
