@@ -1,34 +1,58 @@
 use crate::{LoadError, StereoSample, read_cursor::ReadCursor};
 
-pub struct Track {
-    waveform: [i8; 0x100],
-    envelope: [u8; 0x40],
-    octave: u8,
-    // How long a note "holds" after being hit
-    len: u16,
+pub struct TrackBase {
     // Some tracks seem to have over 255 volume, so this can't be u8
     pub vol: u16,
     vol_left: f32,
     vol_right: f32,
     vol_mix: f32,
-    vol_mix_low: f32,
     timers: [f32; N_KEYS as usize],
     phases: [f32; N_KEYS as usize],
     pub notes: Box<[Note]>,
 }
 
-impl Default for Track {
+pub struct MelodyTrack {
+    pub base: TrackBase,
+    waveform: [i8; 0x100],
+    envelope: [u8; 0x40],
+    octave: u8,
+    // How long a note "holds" after being hit
+    len: u16,
+}
+
+pub struct PercussionTrack {
+    pub base: TrackBase,
+    vol_mix_low: f32,
+}
+
+impl Default for PercussionTrack {
     fn default() -> Self {
         Self {
+            base: TrackBase::default(),
+            vol_mix_low: 1.0,
+        }
+    }
+}
+
+impl Default for MelodyTrack {
+    fn default() -> Self {
+        Self {
+            base: TrackBase::default(),
             waveform: [0; _],
             envelope: [0; _],
             octave: 0,
             len: 0,
+        }
+    }
+}
+
+impl Default for TrackBase {
+    fn default() -> Self {
+        Self {
             vol: 0,
             vol_left: 1.0,
             vol_right: 1.0,
             vol_mix: 1.0,
-            vol_mix_low: 1.0,
             timers: Default::default(),
             phases: Default::default(),
             notes: Box::default(),
@@ -36,64 +60,63 @@ impl Default for Track {
     }
 }
 
-impl Track {
-    pub fn tick<const PERCUSSION: bool>(&mut self, note_idx: usize) {
-        let note = self.notes[note_idx];
+impl MelodyTrack {
+    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
         for key in keys() {
-            if note.key_down(key) {
-                self.timers[usize::from(key)] = if PERCUSSION {
-                    // Percussion samples are short enough to fit into f32 without problem.
-                    #[expect(clippy::cast_precision_loss)]
-                    (PERCUSSION_SAMPLES[usize::from(key)].len() as f32)
-                } else {
-                    f32::from(self.len)
-                };
-                self.phases[usize::from(key)] = 0.;
-            }
-        }
-        if PERCUSSION {
-            let vol = f32::from((i16::try_from(self.vol).unwrap() - 300) * 8);
-            self.vol_mix = 10.0f32.powf(vol / 2000.0);
-            let vol = f32::from((((7 * i16::try_from(self.vol).unwrap()) / 10) - 300) * 8);
-            self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
-        } else {
-            let vol = f32::from((i16::try_from(self.vol).unwrap() - 300) * 8);
-            self.vol_mix = 10.0f32.powf(vol / 2000.0);
-        }
-        if let Some(pan) = note.pan() {
-            self.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
-            self.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
-        }
-    }
-    pub fn render<const PERCUSSION: bool>(
-        &mut self,
-        [out_l, out_r]: &mut StereoSample,
-        samp_phase: f32,
-    ) {
-        for key in keys() {
-            if self.timers[usize::from(key)] <= 0.0 {
+            if self.base.timers[usize::from(key)] <= 0.0 {
                 continue;
             }
-            self.timers[usize::from(key)] -= samp_phase;
+            self.base.timers[usize::from(key)] -= samp_phase;
 
-            let [l, r] = if PERCUSSION {
-                self.percussion_sample_of_key(key, samp_phase)
-            } else {
-                self.melody_sample_of_key(key, samp_phase)
-            };
+            let [l, r] = self.sample_of_key(key, samp_phase);
             *out_l = out_l.saturating_add(l);
             *out_r = out_r.saturating_add(r);
         }
     }
-    fn melody_sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
+    pub fn read(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
+        self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
+        cur.skip(3);
+        self.len = cur
+            .next_u32_le()
+            .ok_or(LoadError::PrematureEof)?
+            .try_into()
+            .unwrap();
+        self.base.vol = cur
+            .next_u32_le()
+            .ok_or(LoadError::PrematureEof)?
+            .try_into()
+            .unwrap();
+        cur.skip(8);
+        self.waveform =
+            *bytemuck::cast_ref(cur.next_bytes::<256>().ok_or(LoadError::PrematureEof)?);
+        self.envelope = *cur.next_bytes().ok_or(LoadError::PrematureEof)?;
+        Ok(())
+    }
+    pub fn tick(&mut self, note_idx: usize) {
+        let note = self.base.notes[note_idx];
+        for key in keys() {
+            if note.key_down(key) {
+                self.base.timers[usize::from(key)] = f32::from(self.len);
+                self.base.phases[usize::from(key)] = 0.;
+            }
+        }
+
+        let vol = f32::from((i16::try_from(self.base.vol).unwrap() - 300) * 8);
+        self.base.vol_mix = 10.0f32.powf(vol / 2000.0);
+        if let Some(pan) = note.pan() {
+            self.base.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
+            self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
+        }
+    }
+    fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         // Since we use the timer as an index here, truncation is expected.
         // We ignore any fractional part.
         // Also, we expect the timer to remain positive at all times, so there shouldn't be
         // any sign loss
-        debug_assert!(self.timers[key] >= 0.0);
+        debug_assert!(self.base.timers[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let mut idx = 64 * (self.len as usize - self.timers[key] as usize) / self.len as usize;
+        let mut idx = 64 * (self.len as usize - self.base.timers[key] as usize) / self.len as usize;
         if idx >= 64 {
             idx = 63;
         }
@@ -109,11 +132,11 @@ impl Track {
                 freq_table[key - 12] / 8.0
             }))
             * samp_phase;
-        self.phases[key] += phase;
+        self.base.phases[key] += phase;
         // We intentionally convert the phase into an index here, so truncation is expected.
         // Moreover, we assume that phase is never negative, so no sign loss can occur.
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let tp = self.phases[key] as usize / 256;
+        let tp = self.base.phases[key] as usize / 256;
         let s0 = i16::from(self.waveform[tp & 0xff]);
         let s = s0 * envelope;
 
@@ -121,24 +144,58 @@ impl Track {
         // There really isn't anything we can do about the truncation.
         #[expect(clippy::cast_possible_truncation)]
         [
-            (f32::from(s) * self.vol_mix * self.vol_left) as i16,
-            (f32::from(s) * self.vol_mix * self.vol_right) as i16,
+            (f32::from(s) * self.base.vol_mix * self.base.vol_left) as i16,
+            (f32::from(s) * self.base.vol_mix * self.base.vol_right) as i16,
         ]
     }
+}
 
-    fn percussion_sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
+impl PercussionTrack {
+    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
+        for key in keys() {
+            if self.base.timers[usize::from(key)] <= 0.0 {
+                continue;
+            }
+            self.base.timers[usize::from(key)] -= samp_phase;
+
+            let [l, r] = self.sample_of_key(key, samp_phase);
+            *out_l = out_l.saturating_add(l);
+            *out_r = out_r.saturating_add(r);
+        }
+    }
+    pub fn tick(&mut self, note_idx: usize) {
+        let note = self.base.notes[note_idx];
+        for key in keys() {
+            if note.key_down(key) {
+                // Percussion samples are short enough to fit into f32 without problem.
+                #[expect(clippy::cast_precision_loss)]
+                (self.base.timers[usize::from(key)] =
+                    PERCUSSION_SAMPLES[usize::from(key)].len() as f32);
+                self.base.phases[usize::from(key)] = 0.;
+            }
+        }
+        let vol = f32::from((i16::try_from(self.base.vol).unwrap() - 300) * 8);
+        self.base.vol_mix = 10.0f32.powf(vol / 2000.0);
+        let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
+        self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
+        if let Some(pan) = note.pan() {
+            self.base.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
+            self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
+        }
+    }
+    fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
-        self.phases[key] += samp_phase;
+        self.base.phases[key] += samp_phase;
         // Since we use the phase as an index, truncation is expected.
         // We also assume that the phase can never be negative, so sign loss cannot occur.
-        debug_assert!(self.phases[key] >= 0.0);
+        debug_assert!(self.base.phases[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let ph = self.phases[key] as usize;
+        let ph = self.base.phases[key] as usize;
         if ph >= PERCUSSION_SAMPLES[key].len() {
             return [0, 0];
         }
         let ph2 = ph + usize::from(ph + 1 != PERCUSSION_SAMPLES[key].len());
-        let ph_fract = self.phases[key].fract();
+        let ph_fract = self.base.phases[key].fract();
         let v0 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph]) - 0x80);
         let v1 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph2]) - 0x80);
         let p = ph_fract.mul_add(v1 - v0, v0)
@@ -146,31 +203,15 @@ impl Track {
             * (if (key & 1) != 0 {
                 self.vol_mix_low
             } else {
-                self.vol_mix
+                self.base.vol_mix
             });
         // We assume that the sample can fit within i16 range, and we don't care about
         // the fractional part.
         #[expect(clippy::cast_possible_truncation)]
-        [(p * self.vol_left) as i16, (p * self.vol_right) as i16]
-    }
-    pub fn read_melody(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
-        self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
-        cur.skip(3);
-        self.len = cur
-            .next_u32_le()
-            .ok_or(LoadError::PrematureEof)?
-            .try_into()
-            .unwrap();
-        self.vol = cur
-            .next_u32_le()
-            .ok_or(LoadError::PrematureEof)?
-            .try_into()
-            .unwrap();
-        cur.skip(8);
-        self.waveform =
-            *bytemuck::cast_ref(cur.next_bytes::<256>().ok_or(LoadError::PrematureEof)?);
-        self.envelope = *cur.next_bytes().ok_or(LoadError::PrematureEof)?;
-        Ok(())
+        [
+            (p * self.base.vol_left) as i16,
+            (p * self.base.vol_right) as i16,
+        ]
     }
 }
 
