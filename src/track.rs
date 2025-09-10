@@ -65,21 +65,27 @@ impl Track {
             self.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
-    pub fn render<const PERCUSSION: bool>(&mut self, sample: &mut StereoSample, samp_phase: f32) {
+    pub fn render<const PERCUSSION: bool>(
+        &mut self,
+        [out_l, out_r]: &mut StereoSample,
+        samp_phase: f32,
+    ) {
         for key in keys() {
             if self.timers[usize::from(key)] <= 0.0 {
                 continue;
             }
             self.timers[usize::from(key)] -= samp_phase;
 
-            if PERCUSSION {
-                self.render_percussion(sample, samp_phase, key);
+            let [l, r] = if PERCUSSION {
+                self.percussion_sample_of_key(key, samp_phase)
             } else {
-                self.render_melody(sample, samp_phase, key);
-            }
+                self.melody_sample_of_key(key, samp_phase)
+            };
+            *out_l = out_l.saturating_add(l);
+            *out_r = out_r.saturating_add(r);
         }
     }
-    fn render_melody(&mut self, [l, r]: &mut StereoSample, samp_phase: f32, key: Key) {
+    fn melody_sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         // Since we use the timer as an index here, truncation is expected.
         // We ignore any fractional part.
@@ -114,13 +120,13 @@ impl Track {
         // We are converting floating point samples to integer samples.
         // There really isn't anything we can do about the truncation.
         #[expect(clippy::cast_possible_truncation)]
-        {
-            *l = l.saturating_add((f32::from(s) * self.vol_mix * self.vol_left) as i16);
-            *r = r.saturating_add((f32::from(s) * self.vol_mix * self.vol_right) as i16);
-        }
+        [
+            (f32::from(s) * self.vol_mix * self.vol_left) as i16,
+            (f32::from(s) * self.vol_mix * self.vol_right) as i16,
+        ]
     }
 
-    fn render_percussion(&mut self, [l, r]: &mut StereoSample, samp_phase: f32, key: Key) {
+    fn percussion_sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         self.phases[key] += samp_phase;
         // Since we use the phase as an index, truncation is expected.
@@ -131,7 +137,7 @@ impl Track {
         let ph2 = ph + usize::from(ph + 1 != PERCUSSION_SAMPLES[key].len());
         let ph_fract = self.phases[key].fract();
         if ph >= PERCUSSION_SAMPLES[key].len() {
-            return;
+            return [0, 0];
         }
         let v0 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph]) - 0x80);
         let v1 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph2]) - 0x80);
@@ -145,10 +151,7 @@ impl Track {
         // We assume that the sample can fit within i16 range, and we don't care about
         // the fractional part.
         #[expect(clippy::cast_possible_truncation)]
-        {
-            *l = l.saturating_add((p * self.vol_left) as i16);
-            *r = r.saturating_add((p * self.vol_right) as i16);
-        }
+        [(p * self.vol_left) as i16, (p * self.vol_right) as i16]
     }
     pub fn read_melody(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
         self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
