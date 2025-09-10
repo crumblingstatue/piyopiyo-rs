@@ -1,7 +1,7 @@
 use crate::{
     LoadError, StereoSample,
     read_cursor::ReadCursor,
-    track::{Key, Track, TrackBase, keys},
+    track::{Key, Note, Track, TrackBase, keys},
 };
 
 pub struct MelodyTrack {
@@ -48,20 +48,12 @@ impl MelodyTrack {
 }
 
 impl Track for MelodyTrack {
-    fn tick(&mut self, note_idx: usize) {
-        let note = self.base.notes[note_idx];
+    fn tick_for_note(&mut self, note: Note) {
         for key in keys() {
             if note.key_down(key) {
                 self.base.timers[usize::from(key)] = f32::from(self.len);
                 self.base.phases[usize::from(key)] = 0.;
             }
-        }
-
-        let vol = f32::from((i16::try_from(self.base.vol).unwrap() - 300) * 8);
-        self.base.vol_mix = 10.0f32.powf(vol / 2000.0);
-        if let Some(pan) = note.pan() {
-            self.base.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
-            self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
@@ -105,7 +97,7 @@ impl Track for MelodyTrack {
         ]
     }
 
-    fn timers(&mut self) -> &mut [f32; super::N_KEYS as usize] {
-        &mut self.base.timers
+    fn base(&mut self) -> &mut TrackBase {
+        &mut self.base
     }
 }

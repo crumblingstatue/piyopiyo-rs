@@ -1,6 +1,6 @@
 use crate::{
     StereoSample,
-    track::{Key, N_KEYS, Track, TrackBase, keys},
+    track::{Key, N_KEYS, Note, Track, TrackBase, keys},
 };
 
 pub struct PercussionTrack {
@@ -18,8 +18,7 @@ impl Default for PercussionTrack {
 }
 
 impl Track for PercussionTrack {
-    fn tick(&mut self, note_idx: usize) {
-        let note = self.base.notes[note_idx];
+    fn tick_for_note(&mut self, note: Note) {
         for key in keys() {
             if note.key_down(key) {
                 // Percussion samples are short enough to fit into f32 without problem.
@@ -29,14 +28,8 @@ impl Track for PercussionTrack {
                 self.base.phases[usize::from(key)] = 0.;
             }
         }
-        let vol = f32::from((i16::try_from(self.base.vol).unwrap() - 300) * 8);
-        self.base.vol_mix = 10.0f32.powf(vol / 2000.0);
         let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
         self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
-        if let Some(pan) = note.pan() {
-            self.base.vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
-            self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
-        }
     }
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
@@ -69,8 +62,8 @@ impl Track for PercussionTrack {
         ]
     }
 
-    fn timers(&mut self) -> &mut [f32; N_KEYS as usize] {
-        &mut self.base.timers
+    fn base(&mut self) -> &mut TrackBase {
+        &mut self.base
     }
 }
 

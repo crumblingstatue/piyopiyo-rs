@@ -31,15 +31,25 @@ impl Default for TrackBase {
 }
 
 pub trait Track {
-    fn tick(&mut self, note_idx: usize);
+    fn tick_for_note(&mut self, note: Note);
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample;
-    fn timers(&mut self) -> &mut [f32; N_KEYS as usize];
+    fn base(&mut self) -> &mut TrackBase;
+    fn tick(&mut self, note_idx: usize) {
+        let note = self.base().notes[note_idx];
+        self.tick_for_note(note);
+        let vol = f32::from((i16::try_from(self.base().vol).unwrap() - 300) * 8);
+        self.base().vol_mix = 10.0f32.powf(vol / 2000.0);
+        if let Some(pan) = note.pan() {
+            self.base().vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
+            self.base().vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
+        }
+    }
     fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
         for key in keys() {
-            if self.timers()[usize::from(key)] <= 0.0 {
+            if self.base().timers[usize::from(key)] <= 0.0 {
                 continue;
             }
-            self.timers()[usize::from(key)] -= samp_phase;
+            self.base().timers[usize::from(key)] -= samp_phase;
 
             let [l, r] = self.sample_of_key(key, samp_phase);
             *out_l = out_l.saturating_add(l);
