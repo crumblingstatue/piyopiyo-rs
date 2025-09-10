@@ -1,7 +1,7 @@
 use crate::{
     LoadError, StereoSample,
     read_cursor::ReadCursor,
-    track::{Key, TrackBase, keys},
+    track::{Key, Track, TrackBase, keys},
 };
 
 pub struct MelodyTrack {
@@ -61,18 +61,9 @@ impl MelodyTrack {
             self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
-    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
-        for key in keys() {
-            if self.base.timers[usize::from(key)] <= 0.0 {
-                continue;
-            }
-            self.base.timers[usize::from(key)] -= samp_phase;
+}
 
-            let [l, r] = self.sample_of_key(key, samp_phase);
-            *out_l = out_l.saturating_add(l);
-            *out_r = out_r.saturating_add(r);
-        }
-    }
+impl Track for MelodyTrack {
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         // Since we use the timer as an index here, truncation is expected.
@@ -112,5 +103,9 @@ impl MelodyTrack {
             (f32::from(s) * self.base.vol_mix * self.base.vol_left) as i16,
             (f32::from(s) * self.base.vol_mix * self.base.vol_right) as i16,
         ]
+    }
+
+    fn timers(&mut self) -> &mut [f32; super::N_KEYS as usize] {
+        &mut self.base.timers
     }
 }

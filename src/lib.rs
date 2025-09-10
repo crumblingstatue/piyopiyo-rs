@@ -16,7 +16,7 @@
 
 use crate::{
     read_cursor::ReadCursor,
-    track::{MelodyTrack, PercussionTrack},
+    track::{MelodyTrack, PercussionTrack, Track as _},
 };
 
 mod read_cursor;

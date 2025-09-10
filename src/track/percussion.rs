@@ -1,6 +1,6 @@
 use crate::{
     StereoSample,
-    track::{Key, N_KEYS, TrackBase, keys},
+    track::{Key, N_KEYS, Track, TrackBase, keys},
 };
 
 pub struct PercussionTrack {
@@ -38,18 +38,9 @@ impl PercussionTrack {
             self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
-    pub fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
-        for key in keys() {
-            if self.base.timers[usize::from(key)] <= 0.0 {
-                continue;
-            }
-            self.base.timers[usize::from(key)] -= samp_phase;
+}
 
-            let [l, r] = self.sample_of_key(key, samp_phase);
-            *out_l = out_l.saturating_add(l);
-            *out_r = out_r.saturating_add(r);
-        }
-    }
+impl Track for PercussionTrack {
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         self.base.phases[key] += samp_phase;
@@ -79,6 +70,10 @@ impl PercussionTrack {
             (p * self.base.vol_left) as i16,
             (p * self.base.vol_right) as i16,
         ]
+    }
+
+    fn timers(&mut self) -> &mut [f32; N_KEYS as usize] {
+        &mut self.base.timers
     }
 }
 
