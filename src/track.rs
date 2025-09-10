@@ -13,8 +13,7 @@ pub struct Track {
     vol_mix: f32,
     vol_mix_low: f32,
     timers: [f32; N_KEYS as usize],
-    f_phases: [f32; N_KEYS as usize],
-    phases: [u32; N_KEYS as usize],
+    phases: [f32; N_KEYS as usize],
     pub notes: Box<[Note]>,
 }
 
@@ -31,7 +30,6 @@ impl Default for Track {
             vol_mix: 1.0,
             vol_mix_low: 1.0,
             timers: Default::default(),
-            f_phases: Default::default(),
             phases: Default::default(),
             notes: Box::default(),
         }
@@ -50,8 +48,7 @@ impl Track {
                 } else {
                     f32::from(self.len)
                 };
-                self.phases[usize::from(key)] = 0;
-                self.f_phases[usize::from(key)] = 0.;
+                self.phases[usize::from(key)] = 0.;
             }
         }
         if PERCUSSION {
@@ -106,14 +103,12 @@ impl Track {
                 freq_table[key - 12] / 8.0
             }))
             * samp_phase;
-        // We intentionally convert the phase into an integer here, so truncation is expected.
+        self.phases[key] += phase;
+        // We intentionally convert the phase into an index here, so truncation is expected.
         // Moreover, we assume that phase is never negative, so no sign loss can occur.
-        debug_assert!(phase >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        (self.phases[key] += phase as u32);
-        let tp = self.phases[key] / 256;
-
-        let s0 = i16::from(self.waveform[(tp & 0xff) as usize]);
+        let tp = self.phases[key] as usize / 256;
+        let s0 = i16::from(self.waveform[tp & 0xff]);
         let s = s0 * envelope;
 
         // We are converting floating point samples to integer samples.
@@ -127,14 +122,14 @@ impl Track {
 
     fn render_percussion(&mut self, [l, r]: &mut StereoSample, samp_phase: f32, key: Key) {
         let key = usize::from(key);
-        self.f_phases[key] += samp_phase;
+        self.phases[key] += samp_phase;
         // Since we use the phase as an index, truncation is expected.
         // We also assume that the phase can never be negative, so sign loss cannot occur.
-        debug_assert!(self.f_phases[key] >= 0.0);
+        debug_assert!(self.phases[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let ph = self.f_phases[key] as usize;
+        let ph = self.phases[key] as usize;
         let ph2 = ph + usize::from(ph + 1 != PERCUSSION_SAMPLES[key].len());
-        let ph_fract = self.f_phases[key].fract();
+        let ph_fract = self.phases[key].fract();
         if ph >= PERCUSSION_SAMPLES[key].len() {
             return;
         }
