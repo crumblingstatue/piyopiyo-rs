@@ -3,18 +3,10 @@ use crate::{
     track::{N_KEYS, PianoKey, Track, TrackBase},
 };
 
+#[derive(Default)]
 pub struct PercussionTrack {
     pub base: TrackBase,
     vol_mix_low: f32,
-}
-
-impl Default for PercussionTrack {
-    fn default() -> Self {
-        Self {
-            base: TrackBase::default(),
-            vol_mix_low: 1.0,
-        }
-    }
 }
 
 impl Track for PercussionTrack {
