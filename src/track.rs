@@ -110,9 +110,7 @@ impl Track {
         // Moreover, we assume that phase is never negative, so no sign loss can occur.
         debug_assert!(phase >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        {
-            self.phases[key] += phase as u32;
-        }
+        (self.phases[key] += phase as u32);
         let tp = self.phases[key] / 256;
 
         let s0 = i16::from(self.waveform[(tp & 0xff) as usize]);
