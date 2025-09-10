@@ -31,12 +31,12 @@ impl Default for TrackBase {
 }
 
 pub trait Track {
-    fn note_duration(&self, key: Key) -> f32;
-    fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample;
+    fn note_duration(&self, key: PianoKey) -> f32;
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample;
     fn base(&mut self) -> &mut TrackBase;
     fn tick(&mut self, note_idx: usize) {
         let note = self.base().notes[note_idx];
-        for key in keys() {
+        for key in piano_keys() {
             if note.key_down(key) {
                 self.base().timers[usize::from(key)] = self.note_duration(key);
                 self.base().phases[usize::from(key)] = 0.;
@@ -52,7 +52,7 @@ pub trait Track {
     }
     fn post_tick(&mut self) {}
     fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
-        for key in keys() {
+        for key in piano_keys() {
             if self.base().timers[usize::from(key)] <= 0.0 {
                 continue;
             }
@@ -70,7 +70,7 @@ pub trait Track {
 pub struct Note(u32);
 
 impl Note {
-    pub const fn key_down(self, key: Key) -> bool {
+    pub const fn key_down(self, key: PianoKey) -> bool {
         self.0 & (1 << key) != 0
     }
     pub fn pan(self) -> Option<i16> {
@@ -81,8 +81,8 @@ impl Note {
 
 const N_KEYS: u8 = 24;
 
-type Key = u8;
+type PianoKey = u8;
 
-const fn keys() -> std::ops::Range<Key> {
+const fn piano_keys() -> std::ops::Range<PianoKey> {
     0..N_KEYS
 }

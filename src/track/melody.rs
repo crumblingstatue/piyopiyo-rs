@@ -1,7 +1,7 @@
 use crate::{
     LoadError, StereoSample,
     read_cursor::ReadCursor,
-    track::{Key, Track, TrackBase},
+    track::{PianoKey, Track, TrackBase},
 };
 
 pub struct MelodyTrack {
@@ -48,10 +48,10 @@ impl MelodyTrack {
 }
 
 impl Track for MelodyTrack {
-    fn note_duration(&self, _key: Key) -> f32 {
+    fn note_duration(&self, _key: PianoKey) -> f32 {
         f32::from(self.len)
     }
-    fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         // Since we use the timer as an index here, truncation is expected.
         // We ignore any fractional part.

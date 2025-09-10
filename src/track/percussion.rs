@@ -1,6 +1,6 @@
 use crate::{
     StereoSample,
-    track::{Key, N_KEYS, Track, TrackBase},
+    track::{N_KEYS, PianoKey, Track, TrackBase},
 };
 
 pub struct PercussionTrack {
@@ -18,7 +18,7 @@ impl Default for PercussionTrack {
 }
 
 impl Track for PercussionTrack {
-    fn note_duration(&self, key: Key) -> f32 {
+    fn note_duration(&self, key: PianoKey) -> f32 {
         // Percussion samples are short enough to fit into f32 without problem.
         #[expect(clippy::cast_precision_loss)]
         (KEY_SAMPLES[usize::from(key)].len() as f32)
@@ -27,7 +27,7 @@ impl Track for PercussionTrack {
         let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
         self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
     }
-    fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample {
         let phase_accum = &mut self.base.phases[usize::from(key)];
         *phase_accum += samp_phase;
         // Since we use the phase as an index, truncation is expected.
