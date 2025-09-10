@@ -31,6 +31,7 @@ impl Default for TrackBase {
 }
 
 pub trait Track {
+    fn tick(&mut self, note_idx: usize);
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample;
     fn timers(&mut self) -> &mut [f32; N_KEYS as usize];
     fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {

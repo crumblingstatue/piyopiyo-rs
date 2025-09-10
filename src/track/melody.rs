@@ -45,7 +45,10 @@ impl MelodyTrack {
         self.envelope = *cur.next_bytes().ok_or(LoadError::PrematureEof)?;
         Ok(())
     }
-    pub fn tick(&mut self, note_idx: usize) {
+}
+
+impl Track for MelodyTrack {
+    fn tick(&mut self, note_idx: usize) {
         let note = self.base.notes[note_idx];
         for key in keys() {
             if note.key_down(key) {
@@ -61,9 +64,6 @@ impl MelodyTrack {
             self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
-}
-
-impl Track for MelodyTrack {
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         // Since we use the timer as an index here, truncation is expected.

@@ -17,8 +17,8 @@ impl Default for PercussionTrack {
     }
 }
 
-impl PercussionTrack {
-    pub fn tick(&mut self, note_idx: usize) {
+impl Track for PercussionTrack {
+    fn tick(&mut self, note_idx: usize) {
         let note = self.base.notes[note_idx];
         for key in keys() {
             if note.key_down(key) {
@@ -38,9 +38,6 @@ impl PercussionTrack {
             self.base.vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
     }
-}
-
-impl Track for PercussionTrack {
     fn sample_of_key(&mut self, key: Key, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
         self.base.phases[key] += samp_phase;
