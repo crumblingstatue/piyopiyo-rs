@@ -134,11 +134,11 @@ impl Track {
         debug_assert!(self.phases[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let ph = self.phases[key] as usize;
-        let ph2 = ph + usize::from(ph + 1 != PERCUSSION_SAMPLES[key].len());
-        let ph_fract = self.phases[key].fract();
         if ph >= PERCUSSION_SAMPLES[key].len() {
             return [0, 0];
         }
+        let ph2 = ph + usize::from(ph + 1 != PERCUSSION_SAMPLES[key].len());
+        let ph_fract = self.phases[key].fract();
         let v0 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph]) - 0x80);
         let v1 = f32::from(i16::from(PERCUSSION_SAMPLES[key][ph2]) - 0x80);
         let p = ph_fract.mul_add(v1 - v0, v0)
