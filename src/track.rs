@@ -4,7 +4,8 @@ pub struct Track {
     waveform: [i8; 0x100],
     envelope: [u8; 0x40],
     octave: u8,
-    len: u32,
+    // How long a note "holds" after being hit
+    len: u16,
     // Some tracks seem to have over 255 volume, so this can't be u8
     pub vol: u16,
     vol_left: f32,
@@ -41,13 +42,13 @@ impl Track {
     pub fn tick<const PERCUSSION: bool>(&mut self, note_idx: usize) {
         let note = self.notes[note_idx];
         for key in keys() {
-            // Sample and track lengths are small enough to fit f32
-            #[expect(clippy::cast_precision_loss)]
             if note.key_down(key) {
                 self.timers[usize::from(key)] = if PERCUSSION {
-                    PERCUSSION_SAMPLES[usize::from(key)].len() as f32
+                    // Percussion samples are short enough to fit into f32 without problem.
+                    #[expect(clippy::cast_precision_loss)]
+                    (PERCUSSION_SAMPLES[usize::from(key)].len() as f32)
                 } else {
-                    self.len as f32
+                    f32::from(self.len)
                 };
                 self.phases[usize::from(key)] = 0;
                 self.f_phases[usize::from(key)] = 0.;
@@ -159,7 +160,11 @@ impl Track {
     pub fn read_melody(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
         self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
         cur.skip(3);
-        self.len = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        self.len = cur
+            .next_u32_le()
+            .ok_or(LoadError::PrematureEof)?
+            .try_into()
+            .unwrap();
         self.vol = cur
             .next_u32_le()
             .ok_or(LoadError::PrematureEof)?
