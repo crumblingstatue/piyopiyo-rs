@@ -48,6 +48,17 @@ pub enum LoadError {
     PrematureEof,
 }
 
+impl std::fmt::Display for LoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoadError::InvalidMagic => f.write_str("Invalid magic (expected PMD)"),
+            LoadError::PrematureEof => f.write_str("End of file reached prematurely"),
+        }
+    }
+}
+
+impl std::error::Error for LoadError {}
+
 type StereoSample = [i16; 2];
 
 impl Player {
