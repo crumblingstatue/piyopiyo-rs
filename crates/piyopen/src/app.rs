@@ -20,13 +20,13 @@ struct SharedPiyoState {
 }
 
 impl SharedPiyoState {
-    pub fn new<P: AsRef<Path>>(path: P) -> Self {
-        let data = std::fs::read(path).unwrap();
-        SharedPiyoState {
-            player: piyopiyo::Player::new(&data).unwrap(),
+    pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
+        let data = std::fs::read(path)?;
+        Ok(SharedPiyoState {
+            player: piyopiyo::Player::new(&data)?,
             paused: false,
             volume: 1.0,
-        }
+        })
     }
 }
 
@@ -36,12 +36,13 @@ pub struct PiyopenApp {
     _audio: Option<tinyaudio::OutputDevice>,
     track_select: TrackSelect,
     open_path: Option<PathBuf>,
+    popup_msg: Option<String>,
 }
 
 fn spawn_playback_thread<P: AsRef<Path>>(
     path: P,
-) -> (Arc<Mutex<SharedPiyoState>>, tinyaudio::OutputDevice) {
-    let shared = Arc::new(Mutex::new(SharedPiyoState::new(path)));
+) -> anyhow::Result<(Arc<Mutex<SharedPiyoState>>, tinyaudio::OutputDevice)> {
+    let shared = Arc::new(Mutex::new(SharedPiyoState::new(path)?));
     let params = tinyaudio::OutputDeviceParameters {
         sample_rate: 44_100,
         channels_count: 2,
@@ -61,14 +62,14 @@ fn spawn_playback_thread<P: AsRef<Path>>(
         }
     })
     .unwrap();
-    (shared, audio)
+    Ok((shared, audio))
 }
 
 impl PiyopenApp {
     pub fn new(path: Option<OsString>) -> Self {
         let (open_path, shared, audio) = match path {
             Some(path) => {
-                let (shared, audio) = spawn_playback_thread(&path);
+                let (shared, audio) = spawn_playback_thread(&path).unwrap();
                 (Some(path.into()), Some(shared), Some(audio))
             }
             None => (None, None, None),
@@ -79,6 +80,7 @@ impl PiyopenApp {
             _audio: audio,
             track_select: TrackSelect::Melody(0),
             open_path,
+            popup_msg: None,
         }
     }
 }
@@ -119,7 +121,10 @@ impl eframe::App for PiyopenApp {
             && let Some(shared) = &mut self.shared
             && let Some(path) = &self.open_path
         {
-            *shared.lock() = SharedPiyoState::new(path);
+            match SharedPiyoState::new(path) {
+                Ok(new) => *shared.lock() = new,
+                Err(e) => self.popup_msg = Some(e.to_string()),
+            }
         }
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             egui::MenuBar::new().ui(ui, |ui| {
@@ -137,7 +142,10 @@ impl eframe::App for PiyopenApp {
                         && let Some(path) = &self.open_path
                         && ui.button("Reload").clicked()
                     {
-                        *shared.lock() = SharedPiyoState::new(path);
+                        match SharedPiyoState::new(path) {
+                            Ok(new) => *shared.lock() = new,
+                            Err(e) => self.popup_msg = Some(e.to_string()),
+                        }
                     }
                     if ui.button("🗛 Add fallback font").clicked() {
                         self.file_dia.pick_file();
@@ -263,10 +271,13 @@ impl eframe::App for PiyopenApp {
             && let Some(op) = self.file_dia.user_data::<FileDialogOp>()
         {
             match op {
-                FileDialogOp::OpenFile => {
-                    *self.shared.as_mut().unwrap().lock() = SharedPiyoState::new(&path);
-                    self.open_path = Some(path);
-                }
+                FileDialogOp::OpenFile => match SharedPiyoState::new(&path) {
+                    Ok(new) => {
+                        *self.shared.as_mut().unwrap().lock() = new;
+                        self.open_path = Some(path);
+                    }
+                    Err(e) => self.popup_msg = Some(e.to_string()),
+                },
                 FileDialogOp::AddFont => match std::fs::read(path) {
                     Ok(data) => {
                         let data = egui::FontData::from_owned(data);
@@ -283,6 +294,18 @@ impl eframe::App for PiyopenApp {
                         eprintln!("Failed to add font: {e}");
                     }
                 },
+            }
+        }
+        if let Some(msg) = &self.popup_msg {
+            let mut close = false;
+            egui::Modal::new("msg_popup".into()).show(ctx, |ui| {
+                ui.label(msg);
+                if ui.button("Ok").clicked() {
+                    close = true;
+                }
+            });
+            if close {
+                self.popup_msg = None;
             }
         }
     }
