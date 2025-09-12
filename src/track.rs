@@ -73,16 +73,26 @@ impl Note {
     pub const fn key_down(self, key: PianoKey) -> bool {
         self.0 & (1 << key) != 0
     }
+    pub const fn set_key_down(&mut self, key: PianoKey) {
+        self.0 |= 1 << key;
+    }
+    pub const fn unset_key_down(&mut self, key: PianoKey) {
+        self.0 &= !(1 << key);
+    }
     pub fn pan(self) -> Option<i16> {
         let pan_table = [2560, 1600, 760, 320, 0, -320, -760, -1640];
         (self.0 & 0xff00_0000 != 0).then(|| pan_table[(self.0 >> 24) as usize])
     }
 }
 
-const N_KEYS: u8 = 24;
+/// Number of piano keys
+pub const N_KEYS: PianoKey = 24;
 
-type PianoKey = u8;
+/// Piano key in range 0..=23
+pub type PianoKey = u8;
 
-const fn piano_keys() -> std::ops::Range<PianoKey> {
+/// Returns a range of all piano keys
+#[must_use]
+pub const fn piano_keys() -> std::ops::Range<PianoKey> {
     0..N_KEYS
 }

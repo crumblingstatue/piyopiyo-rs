@@ -1,0 +1,10 @@
+[package]
+name = "piyopen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+piyopiyo.path = "../../"
+eframe = "0.32.3"
+egui-file-dialog = "0.11"
+tinyaudio = "1.1.0"

@@ -9,7 +9,11 @@ fn main() -> ExitCode {
     loop {
         player.render_next(&mut buf);
         let result = writer.write_all(bytemuck::cast_slice(&buf));
-        eprint!("Playing {path} {:04}/{:04}\r", player.note_cursor, player.n_notes());
+        eprint!(
+            "Playing {path} {:04}/{:04}\r",
+            player.note_cursor,
+            player.n_notes()
+        );
         if let Err(e) = result {
             match e.kind() {
                 std::io::ErrorKind::BrokenPipe => return ExitCode::SUCCESS,

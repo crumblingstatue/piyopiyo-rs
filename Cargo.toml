@@ -8,5 +8,8 @@ rust-version = "1.89"
 license = "0BSD"
 
 [dependencies]
-bytemuck.version = "1.23.2"
 bytemuck.features = ["derive"]
+bytemuck.version = "1.23.2"
+
+[workspace]
+members = ["crates/piyopen"]

@@ -14,6 +14,8 @@
     clippy::suboptimal_flops
 )]
 
+pub use crate::track::{N_KEYS, PianoKey, piano_keys};
+
 use crate::{
     read_cursor::ReadCursor,
     track::{MelodyTrack, PercussionTrack, Track as _},
@@ -28,8 +30,10 @@ pub struct Player {
     millis_per_tick: u32,
     repeat_tick: u32,
     end_tick: u32,
-    melody_tracks: [MelodyTrack; 3],
-    percussion_track: PercussionTrack,
+    /// The melody tracks of the song
+    pub melody_tracks: [MelodyTrack; 3],
+    /// The percussion track of the song
+    pub percussion_track: PercussionTrack,
     curr_tick: u32,
     /// Index of note to play next
     pub note_cursor: u32,

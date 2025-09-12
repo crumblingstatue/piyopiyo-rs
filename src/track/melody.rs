@@ -26,7 +26,7 @@ impl Default for MelodyTrack {
 }
 
 impl MelodyTrack {
-    pub fn read(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
+    pub(crate) fn read(&mut self, cur: &mut ReadCursor) -> Result<(), LoadError> {
         self.octave = cur.next_u8().ok_or(LoadError::PrematureEof)?;
         cur.skip(3);
         self.len = cur
