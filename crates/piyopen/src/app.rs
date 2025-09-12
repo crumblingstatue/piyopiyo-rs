@@ -39,19 +39,15 @@ pub struct PiyopenApp {
     popup_msg: Option<String>,
 }
 
-fn spawn_playback_thread<P: AsRef<Path>>(
-    path: P,
-) -> anyhow::Result<(Arc<Mutex<SharedPiyoState>>, tinyaudio::OutputDevice)> {
-    let shared = Arc::new(Mutex::new(SharedPiyoState::new(path)?));
+fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::OutputDevice {
     let params = tinyaudio::OutputDeviceParameters {
         sample_rate: 44_100,
         channels_count: 2,
         channel_sample_count: 2048,
     };
-    let shared_clone = shared.clone();
-    let audio = tinyaudio::run_output_device(params, move |data| {
+    tinyaudio::run_output_device(params, move |data| {
         let mut buf: [i16; 4096] = [0; _];
-        let mut shared = shared_clone.lock();
+        let mut shared = shared.lock();
         if shared.paused {
             data.fill(0.);
             return;
@@ -61,15 +57,22 @@ fn spawn_playback_thread<P: AsRef<Path>>(
             *f = (*i as f32 / i16::MAX as f32) * shared.volume;
         }
     })
-    .unwrap();
-    Ok((shared, audio))
+    .unwrap()
 }
 
 impl PiyopenApp {
     pub fn new(path: Option<OsString>) -> Self {
+        let mut popup_msg = None;
         let (open_path, shared, audio) = match path {
-            Some(path) => {
-                let (shared, audio) = spawn_playback_thread(&path).unwrap();
+            Some(path) => 'block: {
+                let shared = match SharedPiyoState::new(&path) {
+                    Ok(new) => Arc::new(Mutex::new(new)),
+                    Err(e) => {
+                        popup_msg = Some(e.to_string());
+                        break 'block (None, None, None);
+                    }
+                };
+                let audio = spawn_playback_thread(shared.clone());
                 (Some(path.into()), Some(shared), Some(audio))
             }
             None => (None, None, None),
@@ -80,7 +83,7 @@ impl PiyopenApp {
             _audio: audio,
             track_select: TrackSelect::Melody(0),
             open_path,
-            popup_msg: None,
+            popup_msg,
         }
     }
 }
@@ -273,8 +276,14 @@ impl eframe::App for PiyopenApp {
             match op {
                 FileDialogOp::OpenFile => match SharedPiyoState::new(&path) {
                     Ok(new) => {
-                        *self.shared.as_mut().unwrap().lock() = new;
+                        match &mut self.shared {
+                            Some(shared) => *shared.lock() = new,
+                            None => self.shared = Some(Arc::new(Mutex::new(new))),
+                        }
                         self.open_path = Some(path);
+                        self._audio.get_or_insert_with(|| {
+                            spawn_playback_thread(self.shared.as_ref().unwrap().clone())
+                        });
                     }
                     Err(e) => self.popup_msg = Some(e.to_string()),
                 },
