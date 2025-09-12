@@ -32,23 +32,6 @@ pub struct Player {
     percussion_track: PercussionTrack,
     curr_tick: u32,
     note_ptr: u32,
-    loaded: bool,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self {
-            sample_rate: 44_100,
-            millis_per_tick: 0,
-            repeat_tick: 0,
-            end_tick: 0,
-            melody_tracks: std::array::from_fn(|_| MelodyTrack::default()),
-            percussion_track: PercussionTrack::default(),
-            curr_tick: 0,
-            note_ptr: 0,
-            loaded: false,
-        }
-    }
 }
 
 /// Error that can happen when loading a PMD file
@@ -71,41 +54,49 @@ impl Player {
     /// # Errors
     ///
     /// - If the file doesn't have the proper magic marker (`PMD`)
-    pub fn load(&mut self, data: &[u8]) -> Result<(), LoadError> {
-        self.loaded = false;
+    pub fn new(data: &[u8]) -> Result<Self, LoadError> {
         let mut cur = ReadCursor(data);
         let magic = cur.next_bytes();
         if magic != Some(b"PMD") {
             return Err(LoadError::InvalidMagic);
         }
         cur.skip(5);
-        self.millis_per_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        self.repeat_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        self.end_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        let millis_per_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        let repeat_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
+        let end_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
         let n_notes = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
 
-        for track in &mut self.melody_tracks {
+        let mut melody_tracks = std::array::from_fn(|_| MelodyTrack::default());
+
+        for track in &mut melody_tracks {
             track.read(&mut cur)?;
         }
 
-        self.percussion_track.base.vol = cur
+        let mut percussion_track = PercussionTrack::default();
+
+        percussion_track.base.vol = cur
             .next_u32_le()
             .ok_or(LoadError::PrematureEof)?
             .try_into()
             .unwrap();
 
-        for track in &mut self.melody_tracks {
+        for track in &mut melody_tracks {
             track.base.notes = cur.next_n(n_notes).into();
         }
-        self.percussion_track.base.notes = cur.next_n(n_notes).into();
-        self.loaded = true;
-        Ok(())
+        percussion_track.base.notes = cur.next_n(n_notes).into();
+        Ok(Self {
+            sample_rate: 44_100,
+            millis_per_tick,
+            repeat_tick,
+            end_tick,
+            melody_tracks,
+            percussion_track,
+            curr_tick: 0,
+            note_ptr: 0,
+        })
     }
     /// Advances playback and renders samples into `buf`.
     pub fn render_next(&mut self, buf: &mut [i16]) {
-        if !self.loaded {
-            return;
-        }
         for sample in buf.as_chunks_mut().0 {
             self.tick();
             *sample = self.next_sample();
