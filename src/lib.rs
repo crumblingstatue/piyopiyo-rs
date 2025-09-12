@@ -31,7 +31,8 @@ pub struct Player {
     melody_tracks: [MelodyTrack; 3],
     percussion_track: PercussionTrack,
     curr_tick: u32,
-    note_ptr: u32,
+    /// Index of note to play next
+    pub note_cursor: u32,
 }
 
 /// Error that can happen when loading a PMD file
@@ -92,7 +93,7 @@ impl Player {
             melody_tracks,
             percussion_track,
             curr_tick: 0,
-            note_ptr: 0,
+            note_cursor: 0,
         })
     }
     /// Advances playback and renders samples into `buf`.
@@ -111,12 +112,12 @@ impl Player {
             self.curr_tick = samples_per_tick;
 
             for track in &mut self.melody_tracks {
-                track.tick(self.note_ptr as usize);
+                track.tick(self.note_cursor as usize);
             }
-            self.percussion_track.tick(self.note_ptr as usize);
-            self.note_ptr += 1;
-            if self.note_ptr >= self.end_tick {
-                self.note_ptr = self.repeat_tick;
+            self.percussion_track.tick(self.note_cursor as usize);
+            self.note_cursor += 1;
+            if self.note_cursor >= self.end_tick {
+                self.note_cursor = self.repeat_tick;
             }
         }
     }
@@ -129,5 +130,12 @@ impl Player {
         }
         self.percussion_track.render(&mut sample, samp_phase);
         sample
+    }
+
+    /// Returns number of notes in the song
+    #[must_use]
+    pub fn n_notes(&self) -> usize {
+        // Each track has the same length, we just use the percussion track for simplicity
+        self.percussion_track.base.notes.len()
     }
 }
