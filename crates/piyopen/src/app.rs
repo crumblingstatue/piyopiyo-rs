@@ -24,7 +24,7 @@ impl SharedPiyoState {
     pub fn new<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let data = std::fs::read(path)?;
         Ok(SharedPiyoState {
-            player: piyopiyo::Player::new(&data)?,
+            player: piyopiyo::Player::new(&data, SAMPLE_RATE)?,
             paused: false,
             volume: 1.0,
         })
@@ -40,14 +40,17 @@ pub struct PiyopenApp {
     popup_msg: Option<String>,
 }
 
+const SAMPLE_RATE: u16 = 48_000;
+const N_BUFFERED_SAMPLES: usize = 512;
+
 fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::OutputDevice {
     let params = tinyaudio::OutputDeviceParameters {
-        sample_rate: 44_100,
+        sample_rate: SAMPLE_RATE.into(),
         channels_count: 2,
-        channel_sample_count: 2048,
+        channel_sample_count: N_BUFFERED_SAMPLES,
     };
     tinyaudio::run_output_device(params, move |data| {
-        let mut buf: [i16; 4096] = [0; _];
+        let mut buf: [i16; N_BUFFERED_SAMPLES * 2] = [0; _];
         let mut shared = shared.lock();
         if shared.paused {
             data.fill(0.);
