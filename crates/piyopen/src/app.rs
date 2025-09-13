@@ -194,9 +194,13 @@ impl eframe::App for PiyopenApp {
                         TrackSelect::Melody(idx) => {
                             let track = &mut shared.player.melody_tracks[usize::from(idx)];
                             ui.label("Octave");
-                            ui.add(egui::DragValue::new(&mut track.octave).range(0..=7));
+                            ui.add(
+                                egui::DragValue::new(&mut track.octave)
+                                    .range(0..=7)
+                                    .speed(0.05),
+                            );
                             ui.label("Length");
-                            ui.add(egui::DragValue::new(&mut track.len));
+                            ui.add(egui::DragValue::new(&mut track.len).speed(100.0));
                             &mut track.base
                         }
                         TrackSelect::Percussion => {
