@@ -90,5 +90,4 @@ pub fn ui(
             }
         }
     });
-    ui.separator();
 }
