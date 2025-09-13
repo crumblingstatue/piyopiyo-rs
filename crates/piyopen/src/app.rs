@@ -40,12 +40,12 @@ pub struct PiyopenApp {
     popup_msg: Option<String>,
 }
 
-const SAMPLE_RATE: u16 = 48_000;
+const SAMPLE_RATE: u32 = 48_000;
 const N_BUFFERED_SAMPLES: usize = 512;
 
 fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::OutputDevice {
     let params = tinyaudio::OutputDeviceParameters {
-        sample_rate: SAMPLE_RATE.into(),
+        sample_rate: SAMPLE_RATE as usize,
         channels_count: 2,
         channel_sample_count: N_BUFFERED_SAMPLES,
     };

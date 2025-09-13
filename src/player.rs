@@ -6,7 +6,7 @@ use crate::{
 
 /// PMD music player
 pub struct Player {
-    sample_rate: u16,
+    sample_rate: u32,
     /// When it reaches zero, we execute the next event
     wait_timer: u32,
     /// Index of event to process next
@@ -24,7 +24,7 @@ impl Player {
     /// # Errors
     ///
     /// - If the file doesn't have the proper magic marker (`PMD`)
-    pub fn new(data: &[u8], sample_rate: u16) -> Result<Self, LoadError> {
+    pub fn new(data: &[u8], sample_rate: u32) -> Result<Self, LoadError> {
         Ok(Self {
             sample_rate,
             wait_timer: 0,
@@ -42,7 +42,7 @@ impl Player {
 
     fn tick(&mut self) {
         if self.wait_timer == 0 {
-            let event_wait_samples = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
+            let event_wait_samples = self.sample_rate * self.song.event_wait_ms / 1000;
             self.wait_timer = event_wait_samples;
 
             for track in &mut self.song.melody_tracks {
