@@ -40,7 +40,7 @@ impl std::error::Error for LoadError {}
 type StereoSample = [i16; 2];
 
 impl Player {
-    /// Load a PMD music file into the player
+    /// Create a new `Player` with a song loaded from `data`.
     ///
     /// # Panics
     /// - If the file is too short

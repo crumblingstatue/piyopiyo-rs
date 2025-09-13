@@ -12,7 +12,7 @@ pub struct Song {
 }
 
 impl Song {
-    /// Load a PMD music file into the player
+    /// Load a PMD music file
     ///
     /// # Panics
     /// - If the file is too short
