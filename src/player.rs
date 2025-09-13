@@ -41,9 +41,7 @@ impl Player {
     }
 
     fn tick(&mut self) {
-        let wait_timer = self.wait_timer;
-        self.wait_timer = self.wait_timer.wrapping_sub(1);
-        if wait_timer == 0 {
+        if self.wait_timer == 0 {
             let samples_per_tick = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
             self.wait_timer = samples_per_tick;
 
@@ -55,6 +53,8 @@ impl Player {
             if self.event_cursor >= self.song.repeat_range.end {
                 self.event_cursor = self.song.repeat_range.start;
             }
+        } else {
+            self.wait_timer = self.wait_timer.wrapping_sub(1);
         }
     }
 
