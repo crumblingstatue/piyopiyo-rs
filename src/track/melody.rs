@@ -10,9 +10,9 @@ pub struct MelodyTrack {
     /// Track data common to melody/percussion tracks
     pub base: TrackBase,
     /// The waveform, or in other words, the instrument we're playing
-    pub waveform: [i8; 0x100],
+    pub waveform: [i8; 256],
     /// The envelope (volume variation over time) of the waveform
-    pub envelope: [u8; 0x40],
+    pub envelope: [u8; 64],
     /// Octave shift applied when playing the instrument
     pub octave: u8,
     /// How long a note "holds" after being hit
