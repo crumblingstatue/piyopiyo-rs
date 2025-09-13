@@ -2,7 +2,7 @@ use crate::{MelodyTrack, PercussionTrack, read_cursor::ReadCursor};
 
 /// A Piyo Piyo song
 pub struct Song {
-    /// Milliseconds per tick
+    /// How many milliseconds to wait before next event
     pub event_wait_ms: u32,
     /// Range within which the song repeats
     pub repeat_range: std::ops::Range<u32>,
