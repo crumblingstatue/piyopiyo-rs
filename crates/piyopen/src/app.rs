@@ -191,7 +191,7 @@ impl eframe::App for PiyopenApp {
                     ui.separator();
                     let base = match self.track_select {
                         TrackSelect::Melody(idx) => {
-                            let track = &mut shared.player.melody_tracks[usize::from(idx)];
+                            let track = &mut shared.player.song.melody_tracks[usize::from(idx)];
                             ui.label("Octave");
                             ui.add(
                                 egui::DragValue::new(&mut track.octave)
@@ -203,7 +203,7 @@ impl eframe::App for PiyopenApp {
                             &mut track.base
                         }
                         TrackSelect::Percussion => {
-                            let track = &mut shared.player.percussion_track;
+                            let track = &mut shared.player.song.percussion_track;
                             &mut track.base
                         }
                     };
@@ -232,9 +232,11 @@ impl eframe::App for PiyopenApp {
                     let paused = shared.paused;
                     let events = match self.track_select {
                         TrackSelect::Melody(n) => {
-                            &mut shared.player.melody_tracks[usize::from(n)].base.events
+                            &mut shared.player.song.melody_tracks[usize::from(n)].base.events
                         }
-                        TrackSelect::Percussion => &mut shared.player.percussion_track.base.events,
+                        TrackSelect::Percussion => {
+                            &mut shared.player.song.percussion_track.base.events
+                        }
                     };
                     for event in &mut *events {
                         let mut y = y_off + (N_KEYS as f32 * node_gapped);

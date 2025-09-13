@@ -24,6 +24,15 @@ mod track;
 /// PMD music player
 pub struct Player {
     sample_rate: u16,
+    curr_tick: u32,
+    /// Index of event to process next
+    pub event_cursor: u32,
+    /// The currently loaded song
+    pub song: Song,
+}
+
+/// A Piyo Piyo song
+pub struct Song {
     millis_per_tick: u32,
     repeat_tick: u32,
     end_tick: u32,
@@ -31,9 +40,6 @@ pub struct Player {
     pub melody_tracks: [MelodyTrack; 3],
     /// The percussion track of the song
     pub percussion_track: PercussionTrack,
-    curr_tick: u32,
-    /// Index of event to process next
-    pub event_cursor: u32,
 }
 
 /// Error that can happen when loading a PMD file
@@ -99,13 +105,15 @@ impl Player {
         percussion_track.base.events = cur.next_n(n_events).into();
         Ok(Self {
             sample_rate: 44_100,
-            millis_per_tick,
-            repeat_tick,
-            end_tick,
-            melody_tracks,
-            percussion_track,
             curr_tick: 0,
             event_cursor: 0,
+            song: Song {
+                millis_per_tick,
+                repeat_tick,
+                end_tick,
+                melody_tracks,
+                percussion_track,
+            },
         })
     }
     /// Advances playback and renders samples into `buf`.
@@ -120,16 +128,16 @@ impl Player {
         let curr_tick = self.curr_tick;
         self.curr_tick = self.curr_tick.wrapping_sub(1);
         if curr_tick == 0 {
-            let samples_per_tick = u32::from(self.sample_rate) * self.millis_per_tick / 1000;
+            let samples_per_tick = u32::from(self.sample_rate) * self.song.millis_per_tick / 1000;
             self.curr_tick = samples_per_tick;
 
-            for track in &mut self.melody_tracks {
+            for track in &mut self.song.melody_tracks {
                 track.tick(self.event_cursor as usize);
             }
-            self.percussion_track.tick(self.event_cursor as usize);
+            self.song.percussion_track.tick(self.event_cursor as usize);
             self.event_cursor += 1;
-            if self.event_cursor >= self.end_tick {
-                self.event_cursor = self.repeat_tick;
+            if self.event_cursor >= self.song.end_tick {
+                self.event_cursor = self.song.repeat_tick;
             }
         }
     }
@@ -137,10 +145,10 @@ impl Player {
     fn next_sample(&mut self) -> StereoSample {
         let mut sample = [0; 2];
         let samp_phase = 22_050. / f32::from(self.sample_rate);
-        for track in &mut self.melody_tracks {
+        for track in &mut self.song.melody_tracks {
             track.render(&mut sample, samp_phase);
         }
-        self.percussion_track.render(&mut sample, samp_phase);
+        self.song.percussion_track.render(&mut sample, samp_phase);
         sample
     }
 
@@ -148,6 +156,6 @@ impl Player {
     #[must_use]
     pub fn n_events(&self) -> usize {
         // Each track has the same length, we just use the percussion track for simplicity
-        self.percussion_track.base.events.len()
+        self.song.percussion_track.base.events.len()
     }
 }
