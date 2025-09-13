@@ -235,7 +235,9 @@ impl eframe::App for PiyopenApp {
                     ui.separator();
                     ui.label("Wait")
                         .on_hover_text("How much to wait before next event (in milliseconds)");
-                    ui.add(egui::DragValue::new(&mut shared.player.song.event_wait_ms));
+                    ui.add(
+                        egui::DragValue::new(&mut shared.player.song.event_wait_ms).range(1..=5000),
+                    );
                     ui.label("Repeat");
                     ui.add(egui::DragValue::new(
                         &mut shared.player.song.repeat_range.start,
