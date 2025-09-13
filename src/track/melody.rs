@@ -12,6 +12,7 @@ pub struct MelodyTrack {
     /// The waveform, or in other words, the instrument we're playing
     pub waveform: [i8; 256],
     /// The envelope (volume variation over time) of the waveform
+    /// Seems to be in the range of 0..128
     pub envelope: [u8; 64],
     /// Octave shift applied when playing the instrument
     pub octave: u8,
