@@ -4,13 +4,18 @@ use crate::{
     track::{PianoKey, Track, TrackBase},
 };
 
+/// A melody track based on a waveform and envelope
 pub struct MelodyTrack {
+    /// Track data common to melody/percussion tracks
     pub base: TrackBase,
-    waveform: [i8; 0x100],
-    envelope: [u8; 0x40],
-    octave: u8,
-    // How long a note "holds" after being hit
-    len: u16,
+    /// The waveform, or in other words, the instrument we're playing
+    pub waveform: [i8; 0x100],
+    /// The envelope (volume variation over time) of the waveform
+    pub envelope: [u8; 0x40],
+    /// Octave shift applied when playing the instrument
+    pub octave: u8,
+    /// How long a note "holds" after being hit
+    pub len: u16,
 }
 
 impl Default for MelodyTrack {
@@ -59,7 +64,8 @@ impl Track for MelodyTrack {
         // any sign loss
         debug_assert!(self.base.timers[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let mut idx = 64 * (self.len as usize - self.base.timers[key] as usize) / self.len as usize;
+        let mut idx = 64 * ((self.len as usize).saturating_sub(self.base.timers[key] as usize))
+            / self.len as usize;
         if idx >= 64 {
             idx = 63;
         }

@@ -14,12 +14,9 @@
     clippy::suboptimal_flops
 )]
 
-pub use crate::track::{N_KEYS, PianoKey, piano_keys};
+pub use crate::track::{MelodyTrack, N_KEYS, PercussionTrack, PianoKey, piano_keys};
 
-use crate::{
-    read_cursor::ReadCursor,
-    track::{MelodyTrack, PercussionTrack, Track as _},
-};
+use crate::{read_cursor::ReadCursor, track::Track as _};
 
 mod read_cursor;
 mod track;

@@ -3,8 +3,10 @@ use crate::{
     track::{N_KEYS, PianoKey, Track, TrackBase},
 };
 
+/// Percussion track
 #[derive(Default)]
 pub struct PercussionTrack {
+    /// The base track data common to melody/percussion tracks
     pub base: TrackBase,
     vol_mix_low: f32,
 }
