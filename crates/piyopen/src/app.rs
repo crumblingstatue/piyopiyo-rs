@@ -156,17 +156,30 @@ impl eframe::App for PiyopenApp {
                     }
                 });
                 if let Some(shared) = self.shared.as_mut() {
+                    ui.separator();
                     let mut shared = shared.lock();
-                    let label = if shared.paused { "Resume" } else { "Pause" };
-                    if ui.button(label).clicked() || key_space {
+                    let label = if shared.paused { "▶" } else { "⏸" };
+                    if ui.button(label).on_hover_text("Play/Pause").clicked() || key_space {
                         shared.paused ^= true;
                     }
-                    ui.label("volume");
+                    if ui.button("⏮").on_hover_text("Seek to beginning").clicked() {
+                        shared.player.event_cursor = 0;
+                    }
+                    if ui
+                        .button("⟲")
+                        .on_hover_text("Seek to repeat point")
+                        .clicked()
+                    {
+                        shared.player.event_cursor = shared.player.song.repeat_range.start;
+                    }
+                    ui.label("🔉");
                     ui.add(egui::Slider::new(&mut shared.volume, 0.0..=1.0));
                 }
-                if let Some(path) = &self.open_path {
-                    ui.label(path.display().to_string());
-                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if let Some(path) = &self.open_path {
+                        ui.label(path.display().to_string());
+                    }
+                });
             });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -217,6 +230,13 @@ impl eframe::App for PiyopenApp {
                     ui.label("Wait")
                         .on_hover_text("How much to wait before next event (in milliseconds)");
                     ui.add(egui::DragValue::new(&mut shared.player.song.event_wait_ms));
+                    ui.label("Repeat");
+                    ui.add(egui::DragValue::new(
+                        &mut shared.player.song.repeat_range.start,
+                    ));
+                    ui.add(egui::DragValue::new(
+                        &mut shared.player.song.repeat_range.end,
+                    ));
                 });
                 ui.separator();
                 egui::ScrollArea::horizontal().show(ui, |ui| {
