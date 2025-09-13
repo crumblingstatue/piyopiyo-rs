@@ -32,8 +32,8 @@ pub struct Player {
     /// The percussion track of the song
     pub percussion_track: PercussionTrack,
     curr_tick: u32,
-    /// Index of note to play next
-    pub note_cursor: u32,
+    /// Index of event to process next
+    pub event_cursor: u32,
 }
 
 /// Error that can happen when loading a PMD file
@@ -77,7 +77,7 @@ impl Player {
         let millis_per_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
         let repeat_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
         let end_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        let n_notes = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
+        let n_events = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
 
         let mut melody_tracks = std::array::from_fn(|_| MelodyTrack::default());
 
@@ -94,9 +94,9 @@ impl Player {
             .unwrap();
 
         for track in &mut melody_tracks {
-            track.base.notes = cur.next_n(n_notes).into();
+            track.base.events = cur.next_n(n_events).into();
         }
-        percussion_track.base.notes = cur.next_n(n_notes).into();
+        percussion_track.base.events = cur.next_n(n_events).into();
         Ok(Self {
             sample_rate: 44_100,
             millis_per_tick,
@@ -105,7 +105,7 @@ impl Player {
             melody_tracks,
             percussion_track,
             curr_tick: 0,
-            note_cursor: 0,
+            event_cursor: 0,
         })
     }
     /// Advances playback and renders samples into `buf`.
@@ -124,12 +124,12 @@ impl Player {
             self.curr_tick = samples_per_tick;
 
             for track in &mut self.melody_tracks {
-                track.tick(self.note_cursor as usize);
+                track.tick(self.event_cursor as usize);
             }
-            self.percussion_track.tick(self.note_cursor as usize);
-            self.note_cursor += 1;
-            if self.note_cursor >= self.end_tick {
-                self.note_cursor = self.repeat_tick;
+            self.percussion_track.tick(self.event_cursor as usize);
+            self.event_cursor += 1;
+            if self.event_cursor >= self.end_tick {
+                self.event_cursor = self.repeat_tick;
             }
         }
     }
@@ -144,10 +144,10 @@ impl Player {
         sample
     }
 
-    /// Returns number of notes in the song
+    /// Returns number of events in the song
     #[must_use]
-    pub fn n_notes(&self) -> usize {
+    pub fn n_events(&self) -> usize {
         // Each track has the same length, we just use the percussion track for simplicity
-        self.percussion_track.base.notes.len()
+        self.percussion_track.base.events.len()
     }
 }

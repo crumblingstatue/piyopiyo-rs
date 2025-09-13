@@ -13,7 +13,7 @@ pub struct TrackBase {
     vol_mix: f32,
     timers: [f32; N_KEYS as usize],
     phases: [f32; N_KEYS as usize],
-    pub notes: Box<[Note]>,
+    pub events: Box<[Event]>,
 }
 
 impl Default for TrackBase {
@@ -25,7 +25,7 @@ impl Default for TrackBase {
             vol_mix: 0.0,
             timers: Default::default(),
             phases: Default::default(),
-            notes: Box::default(),
+            events: Box::default(),
         }
     }
 }
@@ -34,17 +34,17 @@ pub trait Track {
     fn note_duration(&self, key: PianoKey) -> f32;
     fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample;
     fn base(&mut self) -> &mut TrackBase;
-    fn tick(&mut self, note_idx: usize) {
-        let note = self.base().notes[note_idx];
+    fn tick(&mut self, event_idx: usize) {
+        let event = self.base().events[event_idx];
         for key in piano_keys() {
-            if note.key_down(key) {
+            if event.key_down(key) {
                 self.base().timers[usize::from(key)] = self.note_duration(key);
                 self.base().phases[usize::from(key)] = 0.;
             }
         }
         let vol = f32::from((i16::try_from(self.base().vol).unwrap() - 300) * 8);
         self.base().vol_mix = 10.0f32.powf(vol / 2000.0);
-        if let Some(pan) = note.pan() {
+        if let Some(pan) = event.pan() {
             self.base().vol_left = 10.0f32.powf(f32::from(pan.min(0)) / 2000.0);
             self.base().vol_right = 10.0f32.powf(f32::from((-pan).min(0)) / 2000.0);
         }
@@ -67,9 +67,9 @@ pub trait Track {
 
 #[repr(transparent)]
 #[derive(Clone, Copy, bytemuck::Zeroable, bytemuck::Pod)]
-pub struct Note(u32);
+pub struct Event(u32);
 
-impl Note {
+impl Event {
     pub const fn key_down(self, key: PianoKey) -> bool {
         self.0 & (1 << key) != 0
     }

@@ -11,8 +11,8 @@ fn main() -> ExitCode {
         let result = writer.write_all(bytemuck::cast_slice(&buf));
         eprint!(
             "Playing {path} {:04}/{:04}\r",
-            player.note_cursor,
-            player.n_notes()
+            player.event_cursor,
+            player.n_events()
         );
         if let Err(e) = result {
             match e.kind() {

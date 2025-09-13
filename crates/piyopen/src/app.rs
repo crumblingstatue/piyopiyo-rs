@@ -173,13 +173,13 @@ impl eframe::App for PiyopenApp {
             if let Some(shared) = self.shared.as_mut() {
                 let mut shared = shared.lock();
                 ui.style_mut().spacing.slider_width = ui.available_width() - 100.0;
-                let n_notes = (shared.player.n_notes() as u32).saturating_sub(1);
+                let n_events = (shared.player.n_events() as u32).saturating_sub(1);
                 ui.horizontal(|ui| {
                     ui.add(egui::Slider::new(
-                        &mut shared.player.note_cursor,
-                        0..=n_notes,
+                        &mut shared.player.event_cursor,
+                        0..=n_events,
                     ));
-                    ui.label(format!("/{}", shared.player.n_notes()));
+                    ui.label(format!("/{}", shared.player.n_events()));
                 });
 
                 ui.separator();
@@ -220,7 +220,7 @@ impl eframe::App for PiyopenApp {
                     let node_gapped = 16.0;
                     let scrollbar_gap = node_gapped;
                     let content_size = egui::vec2(
-                        n_notes as f32 * node_gapped,
+                        n_events as f32 * node_gapped,
                         (N_KEYS as f32 * node_gapped) + scrollbar_gap,
                     );
                     let (rect, re) =
@@ -228,18 +228,18 @@ impl eframe::App for PiyopenApp {
                     let mut x = rect.min.x;
                     let y_off = rect.min.y;
                     let p = ui.painter();
-                    let note_cursor = shared.player.note_cursor;
+                    let event_cursor = shared.player.event_cursor;
                     let paused = shared.paused;
-                    let notes = match self.track_select {
+                    let events = match self.track_select {
                         TrackSelect::Melody(n) => {
-                            &mut shared.player.melody_tracks[usize::from(n)].base.notes
+                            &mut shared.player.melody_tracks[usize::from(n)].base.events
                         }
-                        TrackSelect::Percussion => &mut shared.player.percussion_track.base.notes,
+                        TrackSelect::Percussion => &mut shared.player.percussion_track.base.events,
                     };
-                    for note in &mut *notes {
+                    for event in &mut *events {
                         let mut y = y_off + (N_KEYS as f32 * node_gapped);
                         for key in piano_keys() {
-                            if note.key_down(key) {
+                            if event.key_down(key) {
                                 p.rect_filled(
                                     egui::Rect::from_center_size(
                                         egui::pos2(x, y),
@@ -253,7 +253,7 @@ impl eframe::App for PiyopenApp {
                         }
                         x += node_gapped;
                     }
-                    let cx = (note_cursor as f32 * node_gapped) + rect.min.x;
+                    let cx = (event_cursor as f32 * node_gapped) + rect.min.x;
                     // Keep the playback cursor in view when not paused
                     if !paused && !ui.clip_rect().contains(egui::pos2(cx, rect.min.y)) {
                         let rect = egui::Rect::from_min_max(
@@ -285,13 +285,13 @@ impl eframe::App for PiyopenApp {
                         });
                         if let Some(action) = action {
                             let pos = pos - rect.min.to_vec2();
-                            let note = pos / node_gapped;
-                            let note_off = note.x as usize;
-                            let key = note.y as PianoKey;
+                            let event = pos / node_gapped;
+                            let event_off = event.x as usize;
+                            let key = event.y as PianoKey;
                             match action {
-                                Action::Add => notes[note_off].set_key_down(N_KEYS - key),
-                                Action::Del => notes[note_off].unset_key_down(N_KEYS - key),
-                                Action::SetPos => shared.player.note_cursor = note_off as u32,
+                                Action::Add => events[event_off].set_key_down(N_KEYS - key),
+                                Action::Del => events[event_off].unset_key_down(N_KEYS - key),
+                                Action::SetPos => shared.player.event_cursor = event_off as u32,
                             }
                         }
                     }
