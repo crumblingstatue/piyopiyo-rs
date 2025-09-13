@@ -7,7 +7,8 @@ use crate::{
 /// PMD music player
 pub struct Player {
     sample_rate: u16,
-    curr_tick: u32,
+    /// When it reaches zero, we execute the next event
+    wait_timer: u32,
     /// Index of event to process next
     pub event_cursor: u32,
     /// The currently loaded song
@@ -26,7 +27,7 @@ impl Player {
     pub fn new(data: &[u8]) -> Result<Self, LoadError> {
         Ok(Self {
             sample_rate: 44_100,
-            curr_tick: 0,
+            wait_timer: 0,
             event_cursor: 0,
             song: Song::load(data)?,
         })
@@ -40,11 +41,11 @@ impl Player {
     }
 
     fn tick(&mut self) {
-        let curr_tick = self.curr_tick;
-        self.curr_tick = self.curr_tick.wrapping_sub(1);
-        if curr_tick == 0 {
+        let wait_timer = self.wait_timer;
+        self.wait_timer = self.wait_timer.wrapping_sub(1);
+        if wait_timer == 0 {
             let samples_per_tick = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
-            self.curr_tick = samples_per_tick;
+            self.wait_timer = samples_per_tick;
 
             for track in &mut self.song.melody_tracks {
                 track.tick(self.event_cursor as usize);
