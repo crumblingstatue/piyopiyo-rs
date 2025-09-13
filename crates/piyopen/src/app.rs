@@ -189,6 +189,23 @@ impl eframe::App for PiyopenApp {
                     ui.selectable_value(&mut self.track_select, TrackSelect::Melody(1), "2");
                     ui.selectable_value(&mut self.track_select, TrackSelect::Melody(2), "3");
                     ui.selectable_value(&mut self.track_select, TrackSelect::Percussion, "Drum");
+                    ui.separator();
+                    let base = match self.track_select {
+                        TrackSelect::Melody(idx) => {
+                            let track = &mut shared.player.melody_tracks[usize::from(idx)];
+                            ui.label("Octave");
+                            ui.add(egui::DragValue::new(&mut track.octave).range(0..=7));
+                            ui.label("Length");
+                            ui.add(egui::DragValue::new(&mut track.len));
+                            &mut track.base
+                        }
+                        TrackSelect::Percussion => {
+                            let track = &mut shared.player.percussion_track;
+                            &mut track.base
+                        }
+                    };
+                    ui.label("Volume");
+                    ui.add(egui::DragValue::new(&mut base.vol).range(0..=300));
                 });
                 ui.separator();
                 egui::ScrollArea::horizontal().show(ui, |ui| {
