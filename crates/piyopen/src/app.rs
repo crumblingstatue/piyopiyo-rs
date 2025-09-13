@@ -1,4 +1,5 @@
 mod central_panel;
+mod top_panel;
 
 use {
     eframe::{
@@ -144,57 +145,7 @@ impl eframe::App for PiyopenApp {
             }
         }
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
-            egui::MenuBar::new().ui(ui, |ui| {
-                ui.menu_button("File", |ui| {
-                    if ui.button("Open").clicked() {
-                        if let Some(path) = &self.open_path
-                            && let Some(parent) = path.parent()
-                        {
-                            self.file_dia.config_mut().initial_directory = parent.to_path_buf();
-                        }
-                        self.file_dia.pick_file();
-                        self.file_dia.set_user_data(FileDialogOp::OpenFile);
-                    }
-                    if let Some(shared) = &mut self.shared
-                        && let Some(path) = &self.open_path
-                        && ui.button("Reload").clicked()
-                    {
-                        match SharedPiyoState::new(path) {
-                            Ok(new) => *shared.lock() = new,
-                            Err(e) => self.popup_msg = Some(e.to_string()),
-                        }
-                    }
-                    if ui.button("🗛 Add fallback font").clicked() {
-                        self.file_dia.pick_file();
-                        self.file_dia.set_user_data(FileDialogOp::AddFont);
-                    }
-                });
-                if let Some(shared) = self.shared.as_mut() {
-                    ui.separator();
-                    let mut shared = shared.lock();
-                    let label = if shared.paused { "▶" } else { "⏸" };
-                    if ui.button(label).on_hover_text("Play/Pause").clicked() || key_space {
-                        shared.paused ^= true;
-                    }
-                    if ui.button("⏮").on_hover_text("Seek to beginning").clicked() {
-                        shared.player.event_cursor = 0;
-                    }
-                    if ui
-                        .button("⟲")
-                        .on_hover_text("Seek to repeat point")
-                        .clicked()
-                    {
-                        shared.player.event_cursor = shared.player.song.repeat_range.start;
-                    }
-                    ui.label("🔉");
-                    ui.add(egui::Slider::new(&mut shared.volume, 0.0..=1.0));
-                }
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if let Some(path) = &self.open_path {
-                        ui.label(path.display().to_string());
-                    }
-                });
-            });
+            top_panel::ui(self, ui, key_space);
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             central_panel::ui(self, ui);
