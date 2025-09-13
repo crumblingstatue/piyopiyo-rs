@@ -212,13 +212,10 @@ impl eframe::App for PiyopenApp {
                     let node_size = 8.0;
                     let node_gapped = 16.0;
                     let scrollbar_gap = node_gapped;
-                    // Virtual size of your piano roll content
                     let content_size = egui::vec2(
                         n_notes as f32 * node_gapped,
                         (N_KEYS as f32 * node_gapped) + scrollbar_gap,
                     );
-
-                    // Allocate that much space inside the scroll area
                     let (rect, re) =
                         ui.allocate_exact_size(content_size, egui::Sense::click_and_drag());
                     let mut x = rect.min.x;
