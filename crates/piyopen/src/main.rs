@@ -1,6 +1,7 @@
 use {crate::app::PiyopenApp, eframe::egui};
 
 mod app;
+mod draw_widgets;
 
 fn main() {
     eframe::run_native(

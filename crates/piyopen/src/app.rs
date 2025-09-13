@@ -1,4 +1,5 @@
 use {
+    crate::draw_widgets::{envelope_widget, waveform_widget},
     eframe::{
         egui::{self, mutex::Mutex},
         epaint::text::{FontInsert, FontPriority, InsertFontFamily},
@@ -38,6 +39,8 @@ pub struct PiyopenApp {
     track_select: TrackSelect,
     open_path: Option<PathBuf>,
     popup_msg: Option<String>,
+    waveform_last_pos: Option<egui::Pos2>,
+    envelope_last_pos: Option<egui::Pos2>,
 }
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -93,6 +96,8 @@ impl PiyopenApp {
             track_select: TrackSelect::Melody(0),
             open_path,
             popup_msg,
+            waveform_last_pos: None,
+            envelope_last_pos: None,
         }
     }
 }
@@ -214,6 +219,10 @@ impl eframe::App for PiyopenApp {
                     let base = match self.track_select {
                         TrackSelect::Melody(idx) => {
                             let track = &mut shared.player.song.melody_tracks[usize::from(idx)];
+                            ui.label("Wave");
+                            waveform_widget(ui, &mut track.waveform, &mut self.waveform_last_pos);
+                            ui.label("Envelope");
+                            envelope_widget(ui, &mut track.envelope, &mut self.envelope_last_pos);
                             ui.label("Octave");
                             ui.add(
                                 egui::DragValue::new(&mut track.octave)
