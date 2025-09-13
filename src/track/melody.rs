@@ -59,11 +59,14 @@ impl Track for MelodyTrack {
     }
     fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample {
         let key = usize::from(key);
+        // If the timer is below 0 due to whatever reason, clamp it back to 0 for sanity's sake.
+        if self.base.timers[key] < 0.0 {
+            self.base.timers[key] = 0.0;
+        }
         // Since we use the timer as an index here, truncation is expected.
         // We ignore any fractional part.
         // Also, we expect the timer to remain positive at all times, so there shouldn't be
         // any sign loss
-        debug_assert!(self.base.timers[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let mut idx = (64 * ((self.len as usize).saturating_sub(self.base.timers[key] as usize)))
             .checked_div(self.len as usize)

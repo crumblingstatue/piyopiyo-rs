@@ -3,7 +3,7 @@ use std::{io::Write, process::ExitCode};
 fn main() -> ExitCode {
     let path = std::env::args().nth(1).expect("Need .pmd file");
     let data = std::fs::read(&path).unwrap();
-    let mut player = piyopiyo::Player::new(&data).unwrap();
+    let mut player = piyopiyo::Player::new(&data, 44_100).unwrap();
     let mut buf = [0; 1024];
     let mut writer = std::io::stdout().lock();
     loop {

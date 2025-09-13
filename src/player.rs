@@ -24,9 +24,9 @@ impl Player {
     /// # Errors
     ///
     /// - If the file doesn't have the proper magic marker (`PMD`)
-    pub fn new(data: &[u8]) -> Result<Self, LoadError> {
+    pub fn new(data: &[u8], sample_rate: u16) -> Result<Self, LoadError> {
         Ok(Self {
-            sample_rate: 44_100,
+            sample_rate,
             wait_timer: 0,
             event_cursor: 0,
             song: Song::load(data)?,
