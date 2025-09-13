@@ -16,9 +16,13 @@
 
 pub use crate::track::{MelodyTrack, N_KEYS, PercussionTrack, PianoKey, piano_keys};
 
-use crate::{read_cursor::ReadCursor, track::Track as _};
+use crate::{
+    song::{LoadError, Song},
+    track::Track as _,
+};
 
 mod read_cursor;
+mod song;
 mod track;
 
 /// PMD music player
@@ -29,35 +33,6 @@ pub struct Player {
     pub event_cursor: u32,
     /// The currently loaded song
     pub song: Song,
-}
-
-/// A Piyo Piyo song
-pub struct Song {
-    millis_per_tick: u32,
-    repeat_tick: u32,
-    end_tick: u32,
-    /// The melody tracks of the song
-    pub melody_tracks: [MelodyTrack; 3],
-    /// The percussion track of the song
-    pub percussion_track: PercussionTrack,
-}
-
-/// Error that can happen when loading a PMD file
-#[derive(Debug)]
-pub enum LoadError {
-    /// Invalid magic (not `PMD`)
-    InvalidMagic,
-    /// End of file was reached prematurely
-    PrematureEof,
-}
-
-impl std::fmt::Display for LoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            LoadError::InvalidMagic => f.write_str("Invalid magic (expected PMD)"),
-            LoadError::PrematureEof => f.write_str("End of file reached prematurely"),
-        }
-    }
 }
 
 impl std::error::Error for LoadError {}
@@ -74,46 +49,11 @@ impl Player {
     ///
     /// - If the file doesn't have the proper magic marker (`PMD`)
     pub fn new(data: &[u8]) -> Result<Self, LoadError> {
-        let mut cur = ReadCursor(data);
-        let magic = cur.next_bytes();
-        if magic != Some(b"PMD") {
-            return Err(LoadError::InvalidMagic);
-        }
-        cur.skip(5);
-        let millis_per_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        let repeat_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        let end_tick = cur.next_u32_le().ok_or(LoadError::PrematureEof)?;
-        let n_events = cur.next_u32_le().ok_or(LoadError::PrematureEof)? as usize;
-
-        let mut melody_tracks = std::array::from_fn(|_| MelodyTrack::default());
-
-        for track in &mut melody_tracks {
-            track.read(&mut cur)?;
-        }
-
-        let mut percussion_track = PercussionTrack::default();
-
-        percussion_track.base.vol = cur
-            .next_u32_le()
-            .ok_or(LoadError::PrematureEof)?
-            .try_into()
-            .unwrap();
-
-        for track in &mut melody_tracks {
-            track.base.events = cur.next_n(n_events).into();
-        }
-        percussion_track.base.events = cur.next_n(n_events).into();
         Ok(Self {
             sample_rate: 44_100,
             curr_tick: 0,
             event_cursor: 0,
-            song: Song {
-                millis_per_tick,
-                repeat_tick,
-                end_tick,
-                melody_tracks,
-                percussion_track,
-            },
+            song: Song::load(data)?,
         })
     }
     /// Advances playback and renders samples into `buf`.
