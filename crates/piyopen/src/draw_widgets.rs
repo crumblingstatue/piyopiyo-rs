@@ -1,4 +1,7 @@
-use {eframe::egui, num_traits::AsPrimitive};
+use {
+    eframe::egui::{self, FontId},
+    num_traits::AsPrimitive,
+};
 
 struct Out<T> {
     index: usize,
@@ -24,6 +27,13 @@ pub fn waveform_widget(ui: &mut egui::Ui, wave: &mut [i8; 256], prev_pos: &mut O
         egui::Color32::BLACK,
         egui::Stroke::new(1.0, egui::Color32::LIGHT_YELLOW),
         egui::StrokeKind::Inside,
+    );
+    p.text(
+        rect.min + egui::vec2(2.0, 2.0),
+        egui::Align2::LEFT_TOP,
+        "Waveform",
+        FontId::proportional(12.0),
+        egui::Color32::WHITE,
     );
     p.line(
         wave.iter()
@@ -72,6 +82,13 @@ pub fn envelope_widget(
         egui::Color32::BLACK,
         egui::Stroke::new(1.0, egui::Color32::LIGHT_YELLOW),
         egui::StrokeKind::Inside,
+    );
+    p.text(
+        rect.min + egui::vec2(2.0, 2.0),
+        egui::Align2::LEFT_TOP,
+        "Envelope",
+        FontId::proportional(12.0),
+        egui::Color32::WHITE,
     );
     p.line(
         envelope

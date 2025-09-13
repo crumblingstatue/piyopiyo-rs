@@ -4,9 +4,11 @@ mod app;
 mod draw_widgets;
 
 fn main() {
+    let mut native_opts = eframe::NativeOptions::default();
+    native_opts.viewport.inner_size = Some(egui::vec2(960., 760.));
     eframe::run_native(
         "piyopen",
-        eframe::NativeOptions::default(),
+        native_opts,
         Box::new(move |cc| {
             cc.egui_ctx.style_mut(|style| {
                 let blue = egui::Color32::from_rgb(0, 102, 153);
