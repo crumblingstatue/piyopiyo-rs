@@ -174,15 +174,14 @@ impl eframe::App for PiyopenApp {
                 let mut shared = shared.lock();
                 ui.style_mut().spacing.slider_width = ui.available_width() - 100.0;
                 let n_notes = (shared.player.n_notes() as u32).saturating_sub(1);
-                ui.add(egui::Slider::new(
-                    &mut shared.player.note_cursor,
-                    0..=n_notes,
-                ));
-                ui.label(format!(
-                    "{}/{}",
-                    shared.player.note_cursor,
-                    shared.player.n_notes()
-                ));
+                ui.horizontal(|ui| {
+                    ui.add(egui::Slider::new(
+                        &mut shared.player.note_cursor,
+                        0..=n_notes,
+                    ));
+                    ui.label(format!("/{}", shared.player.n_notes()));
+                });
+
                 ui.separator();
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.track_select, TrackSelect::Melody(0), "1");
