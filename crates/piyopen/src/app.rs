@@ -1,4 +1,5 @@
 mod central_panel;
+mod piano_roll;
 mod top_panel;
 
 use {
@@ -103,7 +104,7 @@ impl PiyopenApp {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone, Copy)]
 enum TrackSelect {
     Melody(u8),
     Percussion,
