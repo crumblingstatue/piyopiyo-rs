@@ -54,10 +54,10 @@ impl MelodyTrack {
 }
 
 impl Track for MelodyTrack {
-    fn note_duration(&self, _key: PianoKey) -> f32 {
-        f32::from(self.len)
+    fn note_duration(&self, _key: PianoKey) -> f64 {
+        f64::from(self.len)
     }
-    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample {
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f64) -> StereoSample {
         let key = usize::from(key);
         // If the timer is below 0 due to whatever reason, clamp it back to 0 for sanity's sake.
         if self.base.timers[key] < 0.0 {
@@ -79,7 +79,7 @@ impl Track for MelodyTrack {
         let freq_table = [
             1551., 1652., 1747., 1848., 1955., 2074., 2205., 2324., 2461., 2616., 2770., 2938.,
         ];
-        let phase = (f32::from(oct_shift)
+        let phase = (f64::from(oct_shift)
             * (if key < 12 {
                 freq_table[key] / 16.0
             } else {

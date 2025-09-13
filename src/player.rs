@@ -60,7 +60,7 @@ impl Player {
 
     fn next_sample(&mut self) -> StereoSample {
         let mut sample = [0; 2];
-        let samp_phase = 22_050. / f32::from(self.sample_rate);
+        let samp_phase = 22_050. / f64::from(self.sample_rate);
         for track in &mut self.song.melody_tracks {
             track.render(&mut sample, samp_phase);
         }

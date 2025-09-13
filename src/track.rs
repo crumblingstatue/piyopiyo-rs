@@ -11,8 +11,8 @@ pub struct TrackBase {
     vol_left: f32,
     vol_right: f32,
     vol_mix: f32,
-    timers: [f32; N_KEYS as usize],
-    phases: [f32; N_KEYS as usize],
+    timers: [f64; N_KEYS as usize],
+    phases: [f64; N_KEYS as usize],
     pub events: Box<[Event]>,
 }
 
@@ -31,8 +31,8 @@ impl Default for TrackBase {
 }
 
 pub trait Track {
-    fn note_duration(&self, key: PianoKey) -> f32;
-    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample;
+    fn note_duration(&self, key: PianoKey) -> f64;
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f64) -> StereoSample;
     fn base(&mut self) -> &mut TrackBase;
     fn tick(&mut self, event_idx: usize) {
         let event = self.base().events[event_idx];
@@ -51,7 +51,7 @@ pub trait Track {
         self.post_tick();
     }
     fn post_tick(&mut self) {}
-    fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f32) {
+    fn render(&mut self, [out_l, out_r]: &mut StereoSample, samp_phase: f64) {
         for key in piano_keys() {
             if self.base().timers[usize::from(key)] <= 0.0 {
                 continue;

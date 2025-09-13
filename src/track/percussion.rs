@@ -12,16 +12,16 @@ pub struct PercussionTrack {
 }
 
 impl Track for PercussionTrack {
-    fn note_duration(&self, key: PianoKey) -> f32 {
+    fn note_duration(&self, key: PianoKey) -> f64 {
         // Percussion samples are short enough to fit into f32 without problem.
         #[expect(clippy::cast_precision_loss)]
-        (KEY_SAMPLES[usize::from(key)].len() as f32)
+        (KEY_SAMPLES[usize::from(key)].len() as f64)
     }
     fn post_tick(&mut self) {
         let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
         self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
     }
-    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f32) -> StereoSample {
+    fn sample_of_key(&mut self, key: PianoKey, samp_phase: f64) -> StereoSample {
         let phase_accum = &mut self.base.phases[usize::from(key)];
         *phase_accum += samp_phase;
         // Since we use the phase as an index, truncation is expected.
@@ -35,21 +35,21 @@ impl Track for PercussionTrack {
         }
         let ph2 = ph + usize::from(ph + 1 != psample.len());
         let ph_fract = phase_accum.fract();
-        let v0 = f32::from(i16::from(psample[ph]) - 0x80);
-        let v1 = f32::from(i16::from(psample[ph2]) - 0x80);
+        let v0 = f64::from(i16::from(psample[ph]) - 0x80);
+        let v1 = f64::from(i16::from(psample[ph2]) - 0x80);
         // For percussion keys, every second key has a lower volume
         let vol_mix = if key % 2 == 0 {
             self.base.vol_mix
         } else {
             self.vol_mix_low
         };
-        let p = ph_fract.mul_add(v1 - v0, v0) * 256.0 * vol_mix;
+        let p = ph_fract.mul_add(v1 - v0, v0) * 256.0 * f64::from(vol_mix);
         // We assume that the sample can fit within i16 range, and we don't care about
         // the fractional part.
         #[expect(clippy::cast_possible_truncation)]
         [
-            (p * self.base.vol_left) as i16,
-            (p * self.base.vol_right) as i16,
+            (p * f64::from(self.base.vol_left)) as i16,
+            (p * f64::from(self.base.vol_right)) as i16,
         ]
     }
 
