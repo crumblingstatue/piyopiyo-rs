@@ -54,7 +54,7 @@ impl Player {
                 self.event_cursor = self.song.repeat_range.start;
             }
         } else {
-            self.wait_timer = self.wait_timer.wrapping_sub(1);
+            self.wait_timer -= 1;
         }
     }
 
