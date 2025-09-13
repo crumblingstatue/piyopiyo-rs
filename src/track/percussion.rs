@@ -35,8 +35,8 @@ impl Track for PercussionTrack {
         }
         let ph2 = ph + usize::from(ph + 1 != psample.len());
         let ph_fract = phase_accum.fract();
-        let v0 = f64::from(i16::from(psample[ph]) - 0x80);
-        let v1 = f64::from(i16::from(psample[ph2]) - 0x80);
+        let v0 = f64::from(i16::from(psample[ph]) - 128);
+        let v1 = f64::from(i16::from(psample[ph2]) - 128);
         // For percussion keys, every second key has a lower volume
         let vol_mix = if key % 2 == 0 {
             self.base.vol_mix
