@@ -16,6 +16,7 @@
 
 pub use crate::{
     player::Player,
+    song::{LoadError, Song},
     track::{MelodyTrack, N_KEYS, PercussionTrack, PianoKey, piano_keys},
 };
 

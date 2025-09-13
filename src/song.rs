@@ -2,9 +2,12 @@ use crate::{MelodyTrack, PercussionTrack, read_cursor::ReadCursor};
 
 /// A Piyo Piyo song
 pub struct Song {
+    /// Milliseconds per tick
     pub millis_per_tick: u32,
-    pub repeat_tick: u32,
-    pub end_tick: u32,
+    /// Where the song starts when repeated
+    pub repeat_start: u32,
+    /// Where the song ends to start repeating
+    pub repeat_end: u32,
     /// The melody tracks of the song
     pub melody_tracks: [MelodyTrack; 3],
     /// The percussion track of the song
@@ -52,8 +55,8 @@ impl Song {
         percussion_track.base.events = cur.next_n(n_events).into();
         Ok(Self {
             millis_per_tick,
-            repeat_tick,
-            end_tick,
+            repeat_start: repeat_tick,
+            repeat_end: end_tick,
             melody_tracks,
             percussion_track,
         })

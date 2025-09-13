@@ -51,8 +51,8 @@ impl Player {
             }
             self.song.percussion_track.tick(self.event_cursor as usize);
             self.event_cursor += 1;
-            if self.event_cursor >= self.song.end_tick {
-                self.event_cursor = self.song.repeat_tick;
+            if self.event_cursor >= self.song.repeat_end {
+                self.event_cursor = self.song.repeat_start;
             }
         }
     }
