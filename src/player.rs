@@ -43,7 +43,7 @@ impl Player {
         let curr_tick = self.curr_tick;
         self.curr_tick = self.curr_tick.wrapping_sub(1);
         if curr_tick == 0 {
-            let samples_per_tick = u32::from(self.sample_rate) * self.song.millis_per_tick / 1000;
+            let samples_per_tick = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
             self.curr_tick = samples_per_tick;
 
             for track in &mut self.song.melody_tracks {

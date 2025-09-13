@@ -3,7 +3,7 @@ use crate::{MelodyTrack, PercussionTrack, read_cursor::ReadCursor};
 /// A Piyo Piyo song
 pub struct Song {
     /// Milliseconds per tick
-    pub millis_per_tick: u32,
+    pub event_wait_ms: u32,
     /// Range within which the song repeats
     pub repeat_range: std::ops::Range<u32>,
     /// The melody tracks of the song
@@ -52,7 +52,7 @@ impl Song {
         }
         percussion_track.base.events = cur.next_n(n_events).into();
         Ok(Self {
-            millis_per_tick,
+            event_wait_ms: millis_per_tick,
             repeat_range: repeat_tick..end_tick,
             melody_tracks,
             percussion_track,

@@ -213,6 +213,10 @@ impl eframe::App for PiyopenApp {
                             .range(0..=300)
                             .speed(1.0),
                     );
+                    ui.separator();
+                    ui.label("Wait")
+                        .on_hover_text("How much to wait before next event (in milliseconds)");
+                    ui.add(egui::DragValue::new(&mut shared.player.song.event_wait_ms));
                 });
                 ui.separator();
                 egui::ScrollArea::horizontal().show(ui, |ui| {
