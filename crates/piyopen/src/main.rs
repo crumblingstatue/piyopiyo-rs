@@ -5,7 +5,7 @@ mod draw_widgets;
 
 fn main() {
     let mut native_opts = eframe::NativeOptions::default();
-    native_opts.viewport.inner_size = Some(egui::vec2(960., 760.));
+    native_opts.viewport.inner_size = Some(egui::vec2(960., 740.));
     eframe::run_native(
         "piyopen",
         native_opts,

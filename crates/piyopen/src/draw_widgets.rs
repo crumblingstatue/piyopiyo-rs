@@ -19,21 +19,20 @@ fn calc_waveform_out(pos: egui::Pos2, rect: egui::Rect) -> Out<i8> {
 }
 
 pub fn waveform_widget(ui: &mut egui::Ui, wave: &mut [i8; 256], prev_pos: &mut Option<egui::Pos2>) {
+    let light_blue = ui.style().visuals.widgets.hovered.weak_bg_fill;
     let (rect, re) = ui.allocate_exact_size(egui::vec2(256.0, 256.0), egui::Sense::drag());
     let p = ui.painter_at(rect);
-    p.rect(
+    p.rect_filled(
         rect,
         1.0,
-        egui::Color32::BLACK,
-        egui::Stroke::new(1.0, egui::Color32::LIGHT_YELLOW),
-        egui::StrokeKind::Inside,
+        ui.style().visuals.widgets.noninteractive.bg_stroke.color,
     );
     p.text(
         rect.min + egui::vec2(2.0, 2.0),
         egui::Align2::LEFT_TOP,
         "Waveform",
         FontId::proportional(12.0),
-        egui::Color32::WHITE,
+        light_blue,
     );
     p.line(
         wave.iter()
@@ -74,21 +73,20 @@ pub fn envelope_widget(
     envelope: &mut [u8; 64],
     prev_pos: &mut Option<egui::Pos2>,
 ) {
+    let light_blue = ui.style().visuals.widgets.hovered.weak_bg_fill;
     let (rect, re) = ui.allocate_exact_size(egui::vec2(64.0, 128.0), egui::Sense::drag());
     let p = ui.painter_at(rect);
-    p.rect(
+    p.rect_filled(
         rect,
         1.0,
-        egui::Color32::BLACK,
-        egui::Stroke::new(1.0, egui::Color32::LIGHT_YELLOW),
-        egui::StrokeKind::Inside,
+        ui.style().visuals.widgets.noninteractive.bg_stroke.color,
     );
     p.text(
         rect.min + egui::vec2(2.0, 2.0),
         egui::Align2::LEFT_TOP,
         "Envelope",
         FontId::proportional(12.0),
-        egui::Color32::WHITE,
+        light_blue,
     );
     p.line(
         envelope
