@@ -2,7 +2,7 @@
 name = "piyopiyo"
 description = "Player for PiyoPiyo music files (Ikachan & friends)"
 repository = "https://github.com/crumblingstatue/piyopiyo-rs/"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.89"
 license = "0BSD"
