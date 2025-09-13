@@ -1,5 +1,5 @@
 use crate::{
-    StereoSample,
+    Sample, StereoSample,
     read_cursor::ReadCursor,
     song::LoadError,
     track::{PianoKey, Track, TrackBase},
@@ -98,8 +98,8 @@ impl Track for MelodyTrack {
         // There really isn't anything we can do about the truncation.
         #[expect(clippy::cast_possible_truncation)]
         [
-            (f32::from(s) * self.base.vol_mix * self.base.vol_left) as i16,
-            (f32::from(s) * self.base.vol_mix * self.base.vol_right) as i16,
+            (f32::from(s) * self.base.vol_mix * self.base.vol_left) as Sample,
+            (f32::from(s) * self.base.vol_mix * self.base.vol_right) as Sample,
         ]
     }
 

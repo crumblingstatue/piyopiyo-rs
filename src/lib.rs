@@ -25,5 +25,7 @@ mod read_cursor;
 mod song;
 mod track;
 
-/// A stereo pair of 16 bit little endian integer samples
-pub type StereoSample = [i16; 2];
+/// 16 bit little endian integer sample
+pub type Sample = i16;
+/// A stereo pair of samples
+pub type StereoSample = [Sample; 2];

@@ -1,5 +1,5 @@
 use crate::{
-    StereoSample,
+    Sample, StereoSample,
     track::{N_KEYS, PianoKey, Track, TrackBase},
 };
 
@@ -48,8 +48,8 @@ impl Track for PercussionTrack {
         // the fractional part.
         #[expect(clippy::cast_possible_truncation)]
         [
-            (p * f64::from(self.base.vol_left)) as i16,
-            (p * f64::from(self.base.vol_right)) as i16,
+            (p * f64::from(self.base.vol_left)) as Sample,
+            (p * f64::from(self.base.vol_right)) as Sample,
         ]
     }
 

@@ -1,5 +1,5 @@
 use crate::{
-    StereoSample,
+    Sample, StereoSample,
     song::{LoadError, Song},
     track::Track as _,
 };
@@ -33,7 +33,7 @@ impl Player {
         })
     }
     /// Advances playback and renders samples into `buf`.
-    pub fn render_next(&mut self, buf: &mut [i16]) {
+    pub fn render_next(&mut self, buf: &mut [Sample]) {
         for sample in buf.as_chunks_mut().0 {
             self.tick();
             *sample = self.next_sample();
