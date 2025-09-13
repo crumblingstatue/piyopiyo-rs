@@ -64,8 +64,9 @@ impl Track for MelodyTrack {
         // any sign loss
         debug_assert!(self.base.timers[key] >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        let mut idx = 64 * ((self.len as usize).saturating_sub(self.base.timers[key] as usize))
-            / self.len as usize;
+        let mut idx = (64 * ((self.len as usize).saturating_sub(self.base.timers[key] as usize)))
+            .checked_div(self.len as usize)
+            .unwrap_or(0);
         if idx >= 64 {
             idx = 63;
         }
