@@ -12,6 +12,7 @@ fn main() {
                 let dark_blue = egui::Color32::from_rgb(0, 51, 102);
                 let light_blue = egui::Color32::from_rgb(153, 204, 255);
                 style.visuals.panel_fill = blue;
+                style.visuals.widgets.noninteractive.bg_stroke.color = dark_blue;
                 style.visuals.widgets.inactive.fg_stroke.color = egui::Color32::WHITE;
                 style.visuals.widgets.inactive.bg_fill = dark_blue;
                 style.visuals.widgets.inactive.weak_bg_fill = dark_blue;

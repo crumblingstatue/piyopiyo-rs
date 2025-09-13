@@ -209,7 +209,11 @@ impl eframe::App for PiyopenApp {
                         }
                     };
                     ui.label("Volume");
-                    ui.add(egui::DragValue::new(&mut base.vol).range(0..=300));
+                    ui.add(
+                        egui::DragValue::new(&mut base.vol)
+                            .range(0..=300)
+                            .speed(1.0),
+                    );
                 });
                 ui.separator();
                 egui::ScrollArea::horizontal().show(ui, |ui| {
