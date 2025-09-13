@@ -239,7 +239,7 @@ impl eframe::App for PiyopenApp {
                                         egui::vec2(node_size, node_size),
                                     ),
                                     1.0,
-                                    egui::Color32::PURPLE,
+                                    egui::Color32::WHITE,
                                 );
                             }
                             y -= node_gapped;
