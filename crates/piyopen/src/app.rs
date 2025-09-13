@@ -225,6 +225,7 @@ impl eframe::App for PiyopenApp {
                     let y_off = rect.min.y;
                     let p = ui.painter();
                     let note_cursor = shared.player.note_cursor;
+                    let paused = shared.paused;
                     let notes = match self.track_select {
                         TrackSelect::Melody(n) => {
                             &mut shared.player.melody_tracks[usize::from(n)].base.notes
@@ -249,6 +250,14 @@ impl eframe::App for PiyopenApp {
                         x += node_gapped;
                     }
                     let cx = (note_cursor as f32 * node_gapped) + rect.min.x;
+                    // Keep the playback cursor in view when not paused
+                    if !paused && !ui.clip_rect().contains(egui::pos2(cx, rect.min.y)) {
+                        let rect = egui::Rect::from_min_max(
+                            egui::pos2(cx, rect.min.y),
+                            egui::pos2(cx + 1.0, rect.max.y),
+                        );
+                        ui.scroll_to_rect(rect, Some(egui::Align::Min));
+                    }
                     p.line_segment(
                         [egui::pos2(cx, rect.min.y), egui::pos2(cx, rect.max.y)],
                         egui::Stroke::new(1.0, egui::Color32::YELLOW),
