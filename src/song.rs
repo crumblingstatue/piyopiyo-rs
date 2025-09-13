@@ -77,3 +77,5 @@ impl std::fmt::Display for LoadError {
         }
     }
 }
+
+impl std::error::Error for LoadError {}

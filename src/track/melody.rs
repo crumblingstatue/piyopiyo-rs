@@ -1,6 +1,7 @@
 use crate::{
-    LoadError, StereoSample,
+    StereoSample,
     read_cursor::ReadCursor,
+    song::LoadError,
     track::{PianoKey, Track, TrackBase},
 };
 
