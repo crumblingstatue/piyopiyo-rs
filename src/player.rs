@@ -42,8 +42,8 @@ impl Player {
 
     fn tick(&mut self) {
         if self.wait_timer == 0 {
-            let samples_per_tick = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
-            self.wait_timer = samples_per_tick;
+            let event_wait_samples = u32::from(self.sample_rate) * self.song.event_wait_ms / 1000;
+            self.wait_timer = event_wait_samples;
 
             for track in &mut self.song.melody_tracks {
                 track.tick(self.event_cursor as usize);
