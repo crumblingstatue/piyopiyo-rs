@@ -7,6 +7,7 @@ use {
     piyopiyo::{N_KEYS, PianoKey, piano_keys},
     std::{
         ffi::OsString,
+        panic::AssertUnwindSafe,
         path::{Path, PathBuf},
         sync::Arc,
     },
@@ -52,7 +53,12 @@ fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::Outp
             data.fill(0.);
             return;
         }
-        shared.player.render_next(&mut buf);
+        let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            shared.player.render_next(&mut buf);
+        }));
+        if let Err(e) = result {
+            eprintln!("piyopiyo panic: {e:?}");
+        }
         for (f, i) in data.iter_mut().zip(&mut buf) {
             *f = (*i as f32 / i16::MAX as f32) * shared.volume;
         }
