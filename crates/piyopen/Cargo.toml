@@ -12,3 +12,7 @@ egui-file-dialog = "0.11"
 tinyaudio = "1.1.0"
 anyhow = "1.0"
 num-traits = "0.2"
+dirs = "6"
+serde.version = "1"
+serde.features = ["derive"]
+ron = "0.11"

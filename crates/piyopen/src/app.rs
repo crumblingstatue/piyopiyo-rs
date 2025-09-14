@@ -3,10 +3,8 @@ mod piano_roll;
 mod top_panel;
 
 use {
-    eframe::{
-        egui::{self, mutex::Mutex},
-        epaint::text::{FontInsert, FontPriority, InsertFontFamily},
-    },
+    crate::{add_fallback_font_to_egui, config::Config},
+    eframe::egui::{self, mutex::Mutex},
     egui_file_dialog::FileDialog,
     std::{
         ffi::OsString,
@@ -43,6 +41,7 @@ pub struct PiyopenApp {
     popup_msg: Option<String>,
     waveform_last_pos: Option<egui::Pos2>,
     envelope_last_pos: Option<egui::Pos2>,
+    cfg: Config,
 }
 
 const SAMPLE_RATE: u32 = 48_000;
@@ -75,7 +74,7 @@ fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::Outp
 }
 
 impl PiyopenApp {
-    pub fn new(path: Option<OsString>) -> Self {
+    pub fn new(path: Option<OsString>, cfg: Config) -> anyhow::Result<Self> {
         let mut popup_msg = None;
         let (open_path, shared, audio) = match path {
             Some(path) => 'block: {
@@ -91,7 +90,7 @@ impl PiyopenApp {
             }
             None => (None, None, None),
         };
-        Self {
+        Ok(Self {
             shared,
             file_dia: FileDialog::new().canonicalize_paths(false),
             _audio: audio,
@@ -100,7 +99,8 @@ impl PiyopenApp {
             popup_msg,
             waveform_last_pos: None,
             envelope_last_pos: None,
-        }
+            cfg,
+        })
     }
 }
 
@@ -169,22 +169,7 @@ impl eframe::App for PiyopenApp {
                     }
                     Err(e) => self.popup_msg = Some(e.to_string()),
                 },
-                FileDialogOp::AddFont => match std::fs::read(path) {
-                    Ok(data) => {
-                        let data = egui::FontData::from_owned(data);
-                        ctx.add_font(FontInsert::new(
-                            "fallback",
-                            data,
-                            vec![InsertFontFamily {
-                                family: egui::FontFamily::Proportional,
-                                priority: FontPriority::Lowest,
-                            }],
-                        ));
-                    }
-                    Err(e) => {
-                        eprintln!("Failed to add font: {e}");
-                    }
-                },
+                FileDialogOp::AddFont => add_fallback_font_to_egui(ctx, "fallback", &path).unwrap(),
             }
         }
         if let Some(msg) = &self.popup_msg {
@@ -198,6 +183,12 @@ impl eframe::App for PiyopenApp {
             if close {
                 self.popup_msg = None;
             }
+        }
+    }
+    fn on_exit(&mut self, _gl: Option<&eframe::glow::Context>) {
+        let result = crate::config::save(&self.cfg);
+        if let Err(e) = result {
+            eprintln!("Failed to save config: {e}");
         }
     }
 }
