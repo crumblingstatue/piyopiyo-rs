@@ -6,12 +6,7 @@ use {
     crate::{add_fallback_font_to_egui, config::Config},
     eframe::egui::{self, mutex::Mutex},
     egui_file_dialog::FileDialog,
-    std::{
-        ffi::OsString,
-        panic::AssertUnwindSafe,
-        path::{Path, PathBuf},
-        sync::Arc,
-    },
+    std::{panic::AssertUnwindSafe, path::Path, sync::Arc},
 };
 
 struct SharedPiyoState {
@@ -37,7 +32,7 @@ pub struct PiyopenApp {
     file_dia: FileDialog,
     _audio: Option<tinyaudio::OutputDevice>,
     track_select: TrackSelect,
-    open_path: Option<PathBuf>,
+    open_path: Option<String>,
     popup_msg: Option<String>,
     waveform_last_pos: Option<egui::Pos2>,
     envelope_last_pos: Option<egui::Pos2>,
@@ -74,7 +69,7 @@ fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::Outp
 }
 
 impl PiyopenApp {
-    pub fn new(path: Option<OsString>, cfg: Config) -> anyhow::Result<Self> {
+    pub fn new(path: Option<String>, mut cfg: Config) -> anyhow::Result<Self> {
         let mut popup_msg = None;
         let (open_path, shared, audio) = match path {
             Some(path) => 'block: {
@@ -86,7 +81,8 @@ impl PiyopenApp {
                     }
                 };
                 let audio = spawn_playback_thread(shared.clone());
-                (Some(path.into()), Some(shared), Some(audio))
+                cfg.last_opened = Some(path.clone());
+                (Some(path), Some(shared), Some(audio))
             }
             None => (None, None, None),
         };
@@ -128,7 +124,7 @@ impl eframe::App for PiyopenApp {
         });
         if ctrl && key_o {
             if let Some(path) = &self.open_path
-                && let Some(parent) = path.parent()
+                && let Some(parent) = <_ as AsRef<Path>>::as_ref(path).parent()
             {
                 self.file_dia.config_mut().initial_directory = parent.to_path_buf();
             }
@@ -162,7 +158,9 @@ impl eframe::App for PiyopenApp {
                             Some(shared) => *shared.lock() = new,
                             None => self.shared = Some(Arc::new(Mutex::new(new))),
                         }
-                        self.open_path = Some(path);
+                        let path_as_string = path.as_os_str().to_str().unwrap().to_owned();
+                        self.open_path = Some(path_as_string.clone());
+                        self.cfg.last_opened = Some(path_as_string);
                         self._audio.get_or_insert_with(|| {
                             spawn_playback_thread(self.shared.as_ref().unwrap().clone())
                         });

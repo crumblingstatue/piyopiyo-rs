@@ -5,7 +5,10 @@ use {
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct Config {
+    #[serde(default)]
     pub fallback_fonts: Vec<FallbackFont>,
+    #[serde(default)]
+    pub last_opened: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -59,7 +59,11 @@ fn main() {
                     eprintln!("failed to add fallback font: {e}");
                 }
             }
-            Ok(Box::new(PiyopenApp::new(std::env::args_os().nth(1), cfg)?))
+            let path = match &cfg.last_opened {
+                Some(path) => Some(path.clone()),
+                None => std::env::args().nth(1),
+            };
+            Ok(Box::new(PiyopenApp::new(path, cfg)?))
         }),
     )
     .unwrap();

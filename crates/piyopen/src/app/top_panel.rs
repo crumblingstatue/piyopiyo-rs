@@ -1,6 +1,7 @@
 use {
     crate::app::{FileDialogOp, PiyopenApp, SharedPiyoState},
     eframe::egui,
+    std::path::Path,
 };
 
 pub fn ui(app: &mut PiyopenApp, ui: &mut egui::Ui, space_key_down: bool) {
@@ -8,7 +9,7 @@ pub fn ui(app: &mut PiyopenApp, ui: &mut egui::Ui, space_key_down: bool) {
         ui.menu_button("File", |ui| {
             if ui.button("Open").clicked() {
                 if let Some(path) = &app.open_path
-                    && let Some(parent) = path.parent()
+                    && let Some(parent) = <_ as AsRef<Path>>::as_ref(path).parent()
                 {
                     app.file_dia.config_mut().initial_directory = parent.to_path_buf();
                 }
@@ -51,7 +52,7 @@ pub fn ui(app: &mut PiyopenApp, ui: &mut egui::Ui, space_key_down: bool) {
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if let Some(path) = &app.open_path {
-                ui.label(path.display().to_string());
+                ui.label(path);
             }
         });
     });
