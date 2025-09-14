@@ -5,7 +5,9 @@ edition = "2024"
 
 [dependencies]
 piyopiyo.path = "../../"
-eframe = "0.32.3"
+eframe.version = "0.32.3"
+eframe.default-features = false
+eframe.features = ["default_fonts", "glow", "x11", "wayland"]
 egui-file-dialog = "0.11"
 tinyaudio = "1.1.0"
 anyhow = "1.0"
