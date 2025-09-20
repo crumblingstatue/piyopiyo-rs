@@ -59,14 +59,16 @@ impl Player {
             self.wait_timer -= 1;
         }
     }
-
-    fn next_sample(&mut self) -> StereoSample {
+    /// Render a sample according the current state of the player
+    pub fn next_sample(&mut self) -> StereoSample {
         let mut sample = [0; 2];
         let samp_phase = 22_050. / f64::from(self.sample_rate);
         for track in &mut self.song.melody_tracks {
-            track.render(&mut sample, samp_phase);
+            track.render_next(&mut sample, samp_phase);
         }
-        self.song.percussion_track.render(&mut sample, samp_phase);
+        self.song
+            .percussion_track
+            .render_next(&mut sample, samp_phase);
         sample
     }
 

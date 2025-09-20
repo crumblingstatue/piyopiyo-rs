@@ -6,6 +6,7 @@ use {
     crate::{add_fallback_font_to_egui, config::Config},
     eframe::egui::{self, mutex::Mutex},
     egui_file_dialog::FileDialog,
+    piyopiyo::{Event, N_KEYS, Track},
     std::{panic::AssertUnwindSafe, path::Path, sync::Arc},
 };
 
@@ -21,7 +22,7 @@ impl SharedPiyoState {
         let data = std::fs::read(path)?;
         Ok(SharedPiyoState {
             player: piyopiyo::Player::new(&data, SAMPLE_RATE)?,
-            paused: false,
+            paused: true,
             volume: 1.0,
         })
     }
@@ -51,12 +52,14 @@ fn spawn_playback_thread(shared: Arc<Mutex<SharedPiyoState>>) -> tinyaudio::Outp
     tinyaudio::run_output_device(params, move |data| {
         let mut buf: [i16; N_BUFFERED_SAMPLES * 2] = [0; _];
         let mut shared = shared.lock();
-        if shared.paused {
-            data.fill(0.);
-            return;
-        }
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
-            shared.player.render_next(&mut buf);
+            if shared.paused {
+                for samp in buf.as_chunks_mut().0 {
+                    *samp = shared.player.next_sample();
+                }
+            } else {
+                shared.player.render_next(&mut buf);
+            }
         }));
         if let Err(e) = result {
             eprintln!("piyopiyo panic: {e:?}");
@@ -122,6 +125,45 @@ impl eframe::App for PiyopenApp {
                 inp.key_pressed(egui::Key::Space),
             ]
         });
+        let piano_keys: [bool; N_KEYS as usize] = ctx.input(|inp| {
+            [
+                inp.key_pressed(egui::Key::Z),
+                inp.key_pressed(egui::Key::S),
+                inp.key_pressed(egui::Key::X),
+                inp.key_pressed(egui::Key::D),
+                inp.key_pressed(egui::Key::C),
+                inp.key_pressed(egui::Key::V),
+                inp.key_pressed(egui::Key::G),
+                inp.key_pressed(egui::Key::B),
+                inp.key_pressed(egui::Key::H),
+                inp.key_pressed(egui::Key::N),
+                inp.key_pressed(egui::Key::J),
+                inp.key_pressed(egui::Key::M),
+                // Upper
+                inp.key_pressed(egui::Key::E),
+                inp.key_pressed(egui::Key::Num4),
+                inp.key_pressed(egui::Key::R),
+                inp.key_pressed(egui::Key::Num5),
+                inp.key_pressed(egui::Key::T),
+                inp.key_pressed(egui::Key::Y),
+                inp.key_pressed(egui::Key::Num7),
+                inp.key_pressed(egui::Key::U),
+                inp.key_pressed(egui::Key::Num8),
+                inp.key_pressed(egui::Key::I),
+                inp.key_pressed(egui::Key::Num9),
+                inp.key_pressed(egui::Key::O),
+            ]
+        });
+        if let Some(shared) = &mut self.shared {
+            let event = Event::from_keydown_array(piano_keys);
+            let mut shared = shared.lock();
+            match self.track_select {
+                TrackSelect::Melody(idx) => {
+                    shared.player.song.melody_tracks[idx as usize].do_event(event)
+                }
+                TrackSelect::Percussion => shared.player.song.percussion_track.do_event(event),
+            }
+        }
         if ctrl && key_o {
             if let Some(path) = &self.open_path
                 && let Some(parent) = <_ as AsRef<Path>>::as_ref(path).parent()

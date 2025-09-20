@@ -17,7 +17,7 @@ impl Track for PercussionTrack {
         #[expect(clippy::cast_precision_loss)]
         (KEY_SAMPLES[usize::from(key)].len() as f64)
     }
-    fn post_tick(&mut self) {
+    fn post_event(&mut self) {
         let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
         self.vol_mix_low = 10.0f32.powf(vol / 2000.0);
     }

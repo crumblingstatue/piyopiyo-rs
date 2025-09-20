@@ -84,7 +84,7 @@ pub fn ui(
                 let key = event.y as PianoKey;
                 match action {
                     Action::Add => events[event_off].set_key_down(N_KEYS - key),
-                    Action::Del => events[event_off].unset_key_down(N_KEYS - key),
+                    Action::Del => events[event_off].set_key_up(N_KEYS - key),
                     Action::SetPos => shared.player.event_cursor = event_off as u32,
                 }
             }
