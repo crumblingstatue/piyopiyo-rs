@@ -76,6 +76,12 @@ pub trait Track {
             *out_r = out_r.saturating_add(r);
         }
     }
+    /// For each piano key, how much time there's after a keypress left until silence (0.0)
+    ///
+    /// Can be used for example to detect which keys are being held down currently
+    fn timers(&mut self) -> [f64; N_KEYS as usize] {
+        self.base().timers
+    }
 }
 
 /// An event consisting of piano key down states and optional pan value
