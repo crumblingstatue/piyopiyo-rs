@@ -127,6 +127,7 @@ impl eframe::App for PiyopenApp {
         });
         let piano_keys: [bool; N_KEYS as usize] = ctx.input(|inp| {
             [
+                // Lower
                 inp.key_pressed(egui::Key::Z),
                 inp.key_pressed(egui::Key::S),
                 inp.key_pressed(egui::Key::X),
@@ -135,16 +136,16 @@ impl eframe::App for PiyopenApp {
                 inp.key_pressed(egui::Key::V),
                 inp.key_pressed(egui::Key::G),
                 inp.key_pressed(egui::Key::B),
-                inp.key_pressed(egui::Key::H),
-                inp.key_pressed(egui::Key::N),
-                inp.key_pressed(egui::Key::J),
-                inp.key_pressed(egui::Key::M),
+                inp.key_pressed(egui::Key::H) || inp.key_pressed(egui::Key::Num1),
+                inp.key_pressed(egui::Key::N) || inp.key_pressed(egui::Key::Q),
+                inp.key_pressed(egui::Key::J) || inp.key_pressed(egui::Key::Num2),
+                inp.key_pressed(egui::Key::M) || inp.key_pressed(egui::Key::W),
                 // Upper
-                inp.key_pressed(egui::Key::E),
-                inp.key_pressed(egui::Key::Num4),
-                inp.key_pressed(egui::Key::R),
-                inp.key_pressed(egui::Key::Num5),
-                inp.key_pressed(egui::Key::T),
+                inp.key_pressed(egui::Key::E) || inp.key_pressed(egui::Key::Comma),
+                inp.key_pressed(egui::Key::Num4) || inp.key_pressed(egui::Key::L),
+                inp.key_pressed(egui::Key::R) || inp.key_pressed(egui::Key::Period),
+                inp.key_pressed(egui::Key::Num5) || inp.key_pressed(egui::Key::Semicolon),
+                inp.key_pressed(egui::Key::T) || inp.key_pressed(egui::Key::Slash),
                 inp.key_pressed(egui::Key::Y),
                 inp.key_pressed(egui::Key::Num7),
                 inp.key_pressed(egui::Key::U),
