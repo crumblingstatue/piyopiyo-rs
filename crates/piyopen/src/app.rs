@@ -126,34 +126,50 @@ impl eframe::App for PiyopenApp {
             ]
         });
         let piano_keys: [bool; N_KEYS as usize] = ctx.input(|inp| {
-            [
+            let mut down = [false; _];
+            let kb_keys = [
                 // Lower
-                inp.key_pressed(egui::Key::Z),
-                inp.key_pressed(egui::Key::S),
-                inp.key_pressed(egui::Key::X),
-                inp.key_pressed(egui::Key::D),
-                inp.key_pressed(egui::Key::C),
-                inp.key_pressed(egui::Key::V),
-                inp.key_pressed(egui::Key::G),
-                inp.key_pressed(egui::Key::B),
-                inp.key_pressed(egui::Key::H) || inp.key_pressed(egui::Key::Num1),
-                inp.key_pressed(egui::Key::N) || inp.key_pressed(egui::Key::Q),
-                inp.key_pressed(egui::Key::J) || inp.key_pressed(egui::Key::Num2),
-                inp.key_pressed(egui::Key::M) || inp.key_pressed(egui::Key::W),
+                &[egui::Key::Z][..],
+                &[egui::Key::S],
+                &[egui::Key::X],
+                &[egui::Key::D],
+                &[egui::Key::C],
+                &[egui::Key::V],
+                &[egui::Key::G],
+                &[egui::Key::B],
+                &[egui::Key::H, egui::Key::Num1],
+                &[egui::Key::N, egui::Key::Q],
+                &[egui::Key::J, egui::Key::Num2],
+                &[egui::Key::M, egui::Key::W],
                 // Upper
-                inp.key_pressed(egui::Key::E) || inp.key_pressed(egui::Key::Comma),
-                inp.key_pressed(egui::Key::Num4) || inp.key_pressed(egui::Key::L),
-                inp.key_pressed(egui::Key::R) || inp.key_pressed(egui::Key::Period),
-                inp.key_pressed(egui::Key::Num5) || inp.key_pressed(egui::Key::Semicolon),
-                inp.key_pressed(egui::Key::T) || inp.key_pressed(egui::Key::Slash),
-                inp.key_pressed(egui::Key::Y),
-                inp.key_pressed(egui::Key::Num7),
-                inp.key_pressed(egui::Key::U),
-                inp.key_pressed(egui::Key::Num8),
-                inp.key_pressed(egui::Key::I),
-                inp.key_pressed(egui::Key::Num9),
-                inp.key_pressed(egui::Key::O),
-            ]
+                &[egui::Key::E, egui::Key::Comma],
+                &[egui::Key::Num4, egui::Key::L],
+                &[egui::Key::R, egui::Key::Period],
+                &[egui::Key::Num5, egui::Key::Semicolon],
+                &[egui::Key::T, egui::Key::Slash],
+                &[egui::Key::Y],
+                &[egui::Key::Num7],
+                &[egui::Key::U],
+                &[egui::Key::Num8],
+                &[egui::Key::I],
+                &[egui::Key::Num9],
+                &[egui::Key::O],
+            ];
+            for ev in &inp.events {
+                if let egui::Event::Key {
+                    key,
+                    pressed: true,
+                    repeat: false,
+                    ..
+                } = ev
+                    && let Some(idx) = kb_keys
+                        .iter()
+                        .position(|kb_keys| kb_keys.iter().any(|kb_key| key == kb_key))
+                {
+                    down[idx] = true;
+                }
+            }
+            down
         });
         if let Some(shared) = &mut self.shared {
             let event = Event::from_keydown_array(piano_keys);
