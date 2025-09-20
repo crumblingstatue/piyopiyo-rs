@@ -34,8 +34,11 @@ pub trait Track {
     fn note_duration(&self, key: PianoKey) -> f64;
     fn sample_of_key(&mut self, key: PianoKey, samp_phase: f64) -> StereoSample;
     fn base(&mut self) -> &mut TrackBase;
-    fn tick(&mut self, event_idx: usize) {
+    fn do_event_at_idx(&mut self, event_idx: usize) {
         let event = self.base().events[event_idx];
+        self.do_event(event);
+    }
+    fn do_event(&mut self, event: Event) {
         for key in piano_keys() {
             if event.key_down(key) {
                 self.base().timers[usize::from(key)] = self.note_duration(key);

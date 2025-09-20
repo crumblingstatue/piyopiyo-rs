@@ -46,9 +46,11 @@ impl Player {
             self.wait_timer = event_wait_samples;
 
             for track in &mut self.song.melody_tracks {
-                track.tick(self.event_cursor as usize);
+                track.do_event_at_idx(self.event_cursor as usize);
             }
-            self.song.percussion_track.tick(self.event_cursor as usize);
+            self.song
+                .percussion_track
+                .do_event_at_idx(self.event_cursor as usize);
             self.event_cursor += 1;
             if self.event_cursor >= self.song.repeat_range.end {
                 self.event_cursor = self.song.repeat_range.start;
