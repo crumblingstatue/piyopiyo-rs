@@ -27,7 +27,7 @@ fn add_fallback_font_to_egui(ctx: &egui::Context, name: &str, path: &Path) -> an
 
 fn main() {
     let mut native_opts = eframe::NativeOptions::default();
-    native_opts.viewport.inner_size = Some(egui::vec2(960., 720.));
+    native_opts.viewport.inner_size = Some(egui::vec2(960., 732.));
     eframe::run_native(
         "piyopen",
         native_opts,
