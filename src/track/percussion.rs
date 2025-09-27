@@ -38,7 +38,7 @@ impl Track for PercussionTrack {
         let v0 = f64::from(i16::from(psample[ph]) - 128);
         let v1 = f64::from(i16::from(psample[ph2]) - 128);
         // For percussion keys, every second key has a lower volume
-        let vol_mix = if key % 2 == 0 {
+        let vol_mix = if key.is_multiple_of(2) {
             self.base.vol_mix
         } else {
             self.vol_mix_low
