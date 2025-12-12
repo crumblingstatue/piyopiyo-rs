@@ -1,4 +1,7 @@
-pub use self::{melody::MelodyTrack, percussion::PercussionTrack};
+pub use self::{
+    melody::MelodyTrack,
+    percussion::{DRUM_SAMPLES, PercussionTrack},
+};
 
 use crate::StereoSample;
 

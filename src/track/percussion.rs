@@ -15,7 +15,7 @@ impl Track for PercussionTrack {
     fn note_duration(&self, key: PianoKey) -> f64 {
         // Percussion samples are short enough to fit into f32 without problem.
         #[expect(clippy::cast_precision_loss)]
-        (KEY_SAMPLES[usize::from(key)].len() as f64)
+        (DRUM_SAMPLES[usize::from(key)].len() as f64)
     }
     fn post_event(&mut self) {
         let vol = f32::from((((7 * i16::try_from(self.base.vol).unwrap()) / 10) - 300) * 8);
@@ -29,7 +29,7 @@ impl Track for PercussionTrack {
         debug_assert!(*phase_accum >= 0.0);
         #[expect(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let ph = *phase_accum as usize;
-        let psample = KEY_SAMPLES[usize::from(key)];
+        let psample = DRUM_SAMPLES[usize::from(key)];
         if ph >= psample.len() {
             return [0, 0];
         }
@@ -66,7 +66,7 @@ const HAT2: &[u8] = include_bytes!("../../wav/hat2.bin");
 const CYMBAL: &[u8] = include_bytes!("../../wav/cymbal.bin");
 
 /// Percussion samples for each piano key
-const KEY_SAMPLES: [&[u8]; N_KEYS as usize] = [
+pub const DRUM_SAMPLES: [&[u8]; N_KEYS as usize] = [
     BASS1, BASS1, BASS2, BASS2, SNARE, SNARE, SNARE, SNARE, HAT1, HAT1, HAT2, HAT2, CYMBAL, CYMBAL,
     CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL, CYMBAL,
 ];

@@ -17,7 +17,9 @@
 pub use crate::{
     player::Player,
     song::{LoadError, Song},
-    track::{Event, MelodyTrack, N_KEYS, PercussionTrack, PianoKey, Track, piano_keys},
+    track::{
+        DRUM_SAMPLES, Event, MelodyTrack, N_KEYS, PercussionTrack, PianoKey, Track, piano_keys,
+    },
 };
 
 mod player;
